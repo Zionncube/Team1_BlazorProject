@@ -1,0 +1,347 @@
+@using FinanceTrackerApp.Components.Shared
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Routing
+@page "/goals"
+@using FinanceTrackerApp.Models
+@using System.Globalization
+
+<PageTitle>Goals</PageTitle>
+
+<section class="page">
+    <header class="page-header">
+        <div>
+            <h1 class="title">Savings Goals</h1>
+            <p class="subtitle">Track your progress and stay consistent.</p>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-ghost" @onclick="OpenAddMoney">
+                + Add Money
+            </button>
+
+            <button class="btn btn-primary" @onclick="OpenAddGoal">
+                + Add Goal
+            </button>
+        </div>
+    </header>
+
+    <div class="grid">
+        @foreach (var goal in goals.OrderByDescending(g => g.CreatedAt))
+        {
+            var percent = GetProgressPercent(goal);
+            var remaining = Math.Max(0, goal.TargetAmount - goal.CurrentAmount);
+
+            <article class="goal-card" style="--accent:@goal.Color">
+                <div class="goal-top">
+                    <div class="goal-badge">GOAL</div>
+                    <div class="goal-menu">
+                        <button class="icon-btn" title="Mark complete" @onclick="() => ToggleComplete(goal)">
+                            @(goal.IsCompleted ? "✓" : "○")
+                        </button>
+                        <button class="icon-btn danger" title="Delete goal" @onclick="() => DeleteGoal(goal.GoalId)">
+                            🗑
+                        </button>
+                    </div>
+                </div>
+
+                <h3 class="goal-title">@goal.Title</h3>
+
+                @if (!string.IsNullOrWhiteSpace(goal.Description))
+                {
+                    <p class="goal-desc">@goal.Description</p>
+                }
+
+                <div class="goal-stats">
+                    <div class="stat">
+                        <span class="label">Saved</span>
+                        <span class="value">@goal.CurrentAmount.ToString("C")</span>
+                    </div>
+                    <div class="stat">
+                        <span class="label">Target</span>
+                        <span class="value">@goal.TargetAmount.ToString("C")</span>
+                    </div>
+                </div>
+
+                <div class="progress">
+                    <div class="progress-bar" style="width:@percent%"></div>
+                </div>
+
+                <div class="goal-bottom">
+                    <span class="progress-text">@percent% complete</span>
+
+                    <span class="remaining">
+                        Remaining: <strong>@remaining.ToString("C")</strong>
+                    </span>
+                </div>
+
+                @if (goal.TargetDate is not null)
+                {
+                    <div class="goal-deadline">
+                        Target date: <strong>@goal.TargetDate.Value.ToString("dd MMM yyyy")</strong>
+                    </div>
+                }
+
+                <div class="goal-footer">
+                    <button class="btn btn-soft" @onclick="() => OpenContribute(goal)">
+                        + Add money to this goal
+                    </button>
+                </div>
+            </article>
+        }
+    </div>
+
+    @if (!goals.Any())
+    {
+        <div class="empty">
+            <h2>No goals yet</h2>
+            <p>Create your first savings goal and start tracking your progress.</p>
+            <button class="btn btn-primary" @onclick="OpenAddGoal">+ Add Goal</button>
+        </div>
+    }
+</section>
+
+<!-- ADD GOAL MODAL -->
+<Modal IsOpen="@isAddGoalOpen"
+       IsOpenChanged="@(v => isAddGoalOpen = v)"
+       Title="Create a Savings Goal"
+       Subtitle="Set a target amount and optional deadline.">
+
+    <ChildContent>
+        <div class="form-grid">
+            <div class="field">
+                <label>Goal title</label>
+                <input class="input" placeholder="e.g. Save for Laptop"
+                       @bind="goalForm.Title" />
+            </div>
+
+            <div class="field">
+                <label>Description (optional)</label>
+                <input class="input" placeholder="Short note..."
+                       @bind="goalForm.Description" />
+            </div>
+
+            <div class="field">
+                <label>Target amount</label>
+                <input class="input" type="number" step="0.01"
+                       @bind="goalForm.TargetAmount" />
+            </div>
+
+            <div class="field">
+                <label>Start saved amount</label>
+                <input class="input" type="number" step="0.01"
+                       @bind="goalForm.CurrentAmount" />
+            </div>
+
+            <div class="field">
+                <label>Theme color</label>
+                <input class="input" type="color" @bind="goalForm.Color" />
+            </div>
+
+            <div class="field">
+                <label>Target date (optional)</label>
+                <input class="input" type="date"
+                       value="@goalTargetDateString"
+                       @onchange="OnTargetDateChanged" />
+            </div>
+        </div>
+    </ChildContent>
+
+    <FooterContent>
+        <button class="btn btn-ghost" @onclick="CloseAddGoal">Cancel</button>
+        <button class="btn btn-primary" @onclick="CreateGoal">Create Goal</button>
+    </FooterContent>
+</Modal>
+
+<!-- ADD MONEY MODAL -->
+<Modal IsOpen="@isAddMoneyOpen"
+       IsOpenChanged="@(v => isAddMoneyOpen = v)"
+       Title="Add Money"
+       Subtitle="Choose a goal and add a contribution.">
+
+    <ChildContent>
+        <div class="form-grid">
+            <div class="field">
+                <label>Select goal</label>
+                <select class="input" @bind="selectedGoalId">
+                    @foreach (var g in goals)
+                    {
+                        <option value="@g.GoalId">@g.Title</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Amount</label>
+                <input class="input" type="number" step="0.01" @bind="contributionAmount" />
+            </div>
+
+            <div class="field">
+                <label>Note (optional)</label>
+                <input class="input" placeholder="e.g. bonus, side hustle..."
+                       @bind="contributionNote" />
+            </div>
+
+            <div class="field">
+                <label>Date</label>
+                <input class="input" type="date"
+                       value="@contributionDateString"
+                       @onchange="OnContributionDateChanged" />
+            </div>
+        </div>
+    </ChildContent>
+
+    <FooterContent>
+        <button class="btn btn-ghost" @onclick="CloseAddMoney">Cancel</button>
+        <button class="btn btn-primary" @onclick="AddMoney">Add Money</button>
+    </FooterContent>
+</Modal>
+
+@code {
+    private List<SavingsGoal> goals = new();
+
+    private bool isAddGoalOpen = false;
+    private bool isAddMoneyOpen = false;
+
+    private SavingsGoal goalForm = new();
+    private string goalTargetDateString = "";
+
+    private Guid selectedGoalId;
+    private decimal contributionAmount = 0;
+    private string contributionNote = "";
+    private string contributionDateString = DateTime.Today.ToString("yyyy-MM-dd");
+
+    protected override void OnInitialized()
+    {
+        // Demo data (remove later when Firebase is connected)
+        goals = new List<SavingsGoal>
+        {
+            new SavingsGoal
+            {
+                Title = "Save for Laptop",
+                Description = "New laptop for coding & projects",
+                TargetAmount = 5000,
+                CurrentAmount = 1350,
+                TargetDate = DateTime.Today.AddMonths(4),
+                Color = "#2BEF83"
+            },
+            new SavingsGoal
+            {
+                Title = "Emergency Fund",
+                Description = "3 months safety buffer",
+                TargetAmount = 12000,
+                CurrentAmount = 4200,
+                TargetDate = DateTime.Today.AddMonths(10),
+                Color = "#4EE3FF"
+            }
+        };
+
+        selectedGoalId = goals.FirstOrDefault()?.GoalId ?? Guid.Empty;
+    }
+
+    private void OpenAddGoal()
+    {
+        goalForm = new SavingsGoal
+        {
+            Title = "",
+            Description = "",
+            TargetAmount = 1000,
+            CurrentAmount = 0,
+            Color = "#2BEF83"
+        };
+        goalTargetDateString = "";
+        isAddGoalOpen = true;
+    }
+
+    private void CloseAddGoal() => isAddGoalOpen = false;
+
+    private void CreateGoal()
+    {
+        if (string.IsNullOrWhiteSpace(goalForm.Title))
+            return;
+
+        // Parse goal target date safely
+        if (!string.IsNullOrWhiteSpace(goalTargetDateString) &&
+            DateTime.TryParseExact(goalTargetDateString, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var dt))
+        {
+            goalForm.TargetDate = dt;
+        }
+        else
+        {
+            goalForm.TargetDate = null;
+        }
+
+        goals.Insert(0, goalForm);
+        isAddGoalOpen = false;
+    }
+
+    private void OpenAddMoney()
+    {
+        if (!goals.Any()) return;
+
+        selectedGoalId = goals.First().GoalId;
+        contributionAmount = 0;
+        contributionNote = "";
+        isAddMoneyOpen = true;
+    }
+
+    private void OpenContribute(SavingsGoal goal)
+    {
+        selectedGoalId = goal.GoalId;
+        contributionAmount = 0;
+        contributionNote = "";
+        isAddMoneyOpen = true;
+    }
+
+    private void CloseAddMoney() => isAddMoneyOpen = false;
+
+    private void AddMoney()
+    {
+        if (selectedGoalId == Guid.Empty || contributionAmount <= 0)
+            return;
+
+        var goal = goals.FirstOrDefault(g => g.GoalId == selectedGoalId);
+        if (goal is null) return;
+
+        // Parse contribution date (even if not used yet)
+        DateTime contributionDate = DateTime.Today;
+        DateTime.TryParseExact(contributionDateString, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+            DateTimeStyles.None, out contributionDate);
+
+        // You can use contributionDate later for logging contributions
+
+        goal.CurrentAmount += contributionAmount;
+
+        if (goal.CurrentAmount >= goal.TargetAmount)
+            goal.IsCompleted = true;
+
+        isAddMoneyOpen = false;
+    }
+
+    private void ToggleComplete(SavingsGoal goal)
+    {
+        goal.IsCompleted = !goal.IsCompleted;
+    }
+
+    private void DeleteGoal(Guid id)
+    {
+        goals.RemoveAll(g => g.GoalId == id);
+    }
+
+    private int GetProgressPercent(SavingsGoal goal)
+    {
+        if (goal.TargetAmount <= 0) return 0;
+        var p = (goal.CurrentAmount / goal.TargetAmount) * 100;
+        return (int)Math.Clamp(Math.Round(p), 0, 100);
+    }
+
+    private void OnTargetDateChanged(ChangeEventArgs e)
+    {
+        goalTargetDateString = e.Value?.ToString() ?? "";
+    }
+
+    private void OnContributionDateChanged(ChangeEventArgs e)
+    {
+        contributionDateString = e.Value?.ToString() ?? "";
+    }
+}
