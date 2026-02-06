@@ -1,0 +1,15 @@
+@page "/logout"
+@inject FinanceTrackerApp.Services.AuthService Auth
+@inject NavigationManager Nav
+
+<PageTitle>Logout</PageTitle>
+
+<p>Logging out...</p>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Auth.Logout();
+        Nav.NavigateTo("/login", true);
+    }
+}

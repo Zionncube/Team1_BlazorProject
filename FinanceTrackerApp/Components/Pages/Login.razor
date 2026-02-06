@@ -1,0 +1,61 @@
+@page "/login"
+@inject FinanceTrackerApp.Services.AuthService Auth
+@inject NavigationManager Nav
+
+<PageTitle>Login</PageTitle>
+
+<section class="auth-page">
+    <div class="auth-card">
+        <h1>Welcome Back</h1>
+        <p class="muted">Login to your finance tracker.</p>
+
+        @if (!string.IsNullOrWhiteSpace(error))
+        {
+            <div class="alert">@error</div>
+        }
+
+        <div class="field">
+            <label>Email</label>
+            <input class="input" @bind="email" placeholder="demo@finance.com" />
+        </div>
+
+        <div class="field">
+            <label>Password</label>
+            <input class="input" type="password" @bind="password" placeholder="1234" />
+        </div>
+
+        <button class="btn btn-primary w-100" @onclick="HandleLogin">
+            Login
+        </button>
+
+        <p class="switch">
+            Don’t have an account?
+            <a href="/register">Sign up</a>
+        </p>
+
+        <p class="hint">
+            Demo login: <strong>demo@finance.com</strong> / <strong>1234</strong>
+        </p>
+    </div>
+</section>
+
+@code {
+    private string email = "";
+    private string password = "";
+    private string error = "";
+
+    private void HandleLogin()
+    {
+        error = "";
+
+        var ok = Auth.Login(email, password);
+
+        if (!ok)
+        {
+            error = "Invalid email or password.";
+            return;
+        }
+
+        Nav.NavigateTo("/dashboard");
+    }
+}
