@@ -1,0 +1,70 @@
+@page "/register"
+@using FinanceTrackerApp.Models
+@inject FinanceTrackerApp.Services.AuthService Auth
+@inject NavigationManager Nav
+
+<PageTitle>Sign Up</PageTitle>
+
+<section class="auth-page">
+    <div class="auth-card">
+        <h1>Create Account</h1>
+        <p class="muted">Sign up to start tracking your finances.</p>
+
+        @if (!string.IsNullOrWhiteSpace(error))
+        {
+            <div class="alert">@error</div>
+        }
+
+        <div class="field">
+            <label>Full Name</label>
+            <input class="input" @bind="user.FullName" placeholder="Your name" />
+        </div>
+
+        <div class="field">
+            <label>Email</label>
+            <input class="input" @bind="user.Email" placeholder="you@email.com" />
+        </div>
+
+        <div class="field">
+            <label>Password</label>
+            <input class="input" type="password" @bind="user.Password" placeholder="Create password" />
+        </div>
+
+        <button class="btn btn-primary w-100" @onclick="HandleRegister">
+            Sign Up
+        </button>
+
+        <p class="switch">
+            Already have an account?
+            <a href="/login">Login</a>
+        </p>
+    </div>
+</section>
+
+@code {
+    private AppUser user = new();
+    private string error = "";
+
+    private void HandleRegister()
+    {
+        error = "";
+
+        if (string.IsNullOrWhiteSpace(user.FullName) ||
+            string.IsNullOrWhiteSpace(user.Email) ||
+            string.IsNullOrWhiteSpace(user.Password))
+        {
+            error = "Please fill in all fields.";
+            return;
+        }
+
+        var ok = Auth.Register(user);
+
+        if (!ok)
+        {
+            error = "That email is already registered.";
+            return;
+        }
+
+        Nav.NavigateTo("/dashboard");
+    }
+}

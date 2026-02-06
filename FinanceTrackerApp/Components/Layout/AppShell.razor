@@ -1,0 +1,123 @@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Routing
+
+<div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar glass @(sidebarOpen ? "open" : "")">
+        <div class="sidebar-brand">
+            <div class="brand-badge">₣</div>
+            <div class="brand-text">
+                <div class="brand-title">Finance Tracker</div>
+                <div class="brand-sub">Smart money habits</div>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                <span class="nav-icon">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"
+                              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                Dashboard
+            </NavLink>
+
+            <NavLink class="nav-link" href="/transactions">
+                <span class="nav-icon">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                Transactions
+            </NavLink>
+
+            <NavLink class="nav-link" href="/analytics">
+                <span class="nav-icon">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 19V5m4 14V9m4 10V12m4 7V7m4 12v-5"
+                              stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                Analytics
+            </NavLink>
+
+            <NavLink class="nav-link" href="/categories">
+                <span class="nav-icon">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M7 7h10v10H7V7Z" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M3 11h4M17 13h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                Categories
+            </NavLink>
+
+            <NavLink class="nav-link" href="/settings">
+                <span class="nav-icon">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+                              stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M19.4 15a7.8 7.8 0 0 0 .1-1l2-1.5-2-3.5-2.4.6a7.3 7.3 0 0 0-1.7-1l-.3-2.4h-4l-.3 2.4a7.3 7.3 0 0 0-1.7 1L6.5 9 4.5 12.5l2 1.5a7.8 7.8 0 0 0 0 2l-2 1.5 2 3.5 2.4-.6c.5.4 1.1.7 1.7 1l.3 2.4h4l.3-2.4c.6-.3 1.2-.6 1.7-1l2.4.6 2-3.5-2-1.5Z"
+                              stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                Settings
+            </NavLink>
+        </nav>
+
+        <div class="sidebar-footer">
+            <button class="btn btn-primary" style="width: 100%;">+ Add Transaction</button>
+            <button class="btn" style="width: 100%; margin-top: .6rem;">Logout</button>
+        </div>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div class="overlay @(sidebarOpen ? "show" : "")" @onclick="CloseSidebar"></div>
+
+    <!-- Main Area -->
+    <main class="main-area">
+        <header class="header glass">
+            <div class="header-left">
+
+                <!-- Hamburger (mobile only) -->
+                <button class="hamburger btn" @onclick="ToggleSidebar" aria-label="Open Menu">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 7h16M4 12h16M4 17h16"
+                              stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </button>
+
+                <div>
+                    <div class="header-title">Welcome back 👋</div>
+                    <div class="header-sub">Track your money like a pro.</div>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="profile-chip glass">
+                    <div class="avatar">H</div>
+                    <div>
+                        <div class="profile-name">Happiness</div>
+                        <div class="profile-sub">Personal Account</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="content">
+            @ChildContent
+        </section>
+    </main>
+
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool sidebarOpen = false;
+
+    private void ToggleSidebar() => sidebarOpen = !sidebarOpen;
+
+    private void CloseSidebar() => sidebarOpen = false;
+}

@@ -1,0 +1,126 @@
+@page "/transactions"
+
+@using FinanceTrackerApp.Models
+
+<div class="glass card">
+
+    <div class="page-head">
+        <div>
+            <h2 style="margin:0;">Transactions</h2>
+            <p style="margin:.25rem 0 0 0;">Manage your income and expenses.</p>
+        </div>
+
+        <button class="btn btn-primary" @onclick="OpenModal">
+            + Add Transaction
+        </button>
+    </div>
+
+    <div class="filters glass">
+        <input class="input" placeholder="Search transactions (e.g. taxi, groceries, salary)..." />
+
+        <select class="input">
+            <option>All Types</option>
+            <option>Income</option>
+            <option>Expense</option>
+        </select>
+
+        <select class="input">
+            <option>All Categories</option>
+            <option>Food</option>
+            <option>Transport</option>
+            <option>Salary</option>
+            <option>Rent</option>
+        </select>
+    </div>
+
+    <div class="table glass">
+        <div class="table-row table-head">
+            <div>Date</div>
+            <div>Description</div>
+            <div>Category</div>
+            <div>Type</div>
+            <div style="text-align:right;">Amount</div>
+        </div>
+
+        <div class="table-row">
+            <div class="muted">Today</div>
+            <div class="strong">Groceries</div>
+            <div><span class="pill">Food</span></div>
+            <div><span class="badge badge-expense">Expense</span></div>
+            <div class="amount expense" style="text-align:right;">- $28.40</div>
+        </div>
+
+        <div class="table-row">
+            <div class="muted">Yesterday</div>
+            <div class="strong">Taxi Ride</div>
+            <div><span class="pill">Transport</span></div>
+            <div><span class="badge badge-expense">Expense</span></div>
+            <div class="amount expense" style="text-align:right;">- $12.00</div>
+        </div>
+
+        <div class="table-row">
+            <div class="muted">Jan 25</div>
+            <div class="strong">Salary Payment</div>
+            <div><span class="pill">Salary</span></div>
+            <div><span class="badge badge-income">Income</span></div>
+            <div class="amount income" style="text-align:right;">+ $1,200.00</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ADD TRANSACTION MODAL -->
+<Modal @bind-IsOpen="isModalOpen"
+       Title="Add Transaction"
+       Subtitle="Create a new income or expense transaction.">
+    <ChildContent>
+        <div class="form-grid">
+            <div class="field">
+                <label>Amount (USD)</label>
+                <input class="input" type="number" placeholder="e.g. 25.50" @bind="newTx.Amount" />
+            </div>
+            <div class="field">
+                <label>Type</label>
+                <select class="input" @bind="newTx.Type">
+                    <option value="Expense">Expense</option>
+                    <option value="Income">Income</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Date</label>
+                <input type="date" class="input" @bind="newTx.Date" @bind:format="yyyy-MM-dd" />
+            </div>
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn btn-ghost" @onclick="() => isModalOpen = false">Cancel</button>
+        <button class="btn btn-primary" @onclick="SaveTransaction">Save</button>
+    </FooterContent>
+</Modal>
+
+@code {
+    private bool isModalOpen = false;
+    private Transaction newTx = new();
+    private List<Transaction> transactions = new()
+    {
+        new Transaction { Amount = 2500, Category="Salary", Type="income", Date=DateTime.Today, Description="January salary" },
+        new Transaction { Amount = 150, Category="Transport", Type="expense", Date=DateTime.Today.AddDays(-1), Description="Taxi" }
+    };
+
+    private void OpenModal()
+    {
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+    }
+
+    private void SaveTransaction()
+    {
+        transactions.Insert(0, newTx);
+        newTx = new Transaction();
+        isModalOpen = false;
+    }
+}
