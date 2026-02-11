@@ -7,6 +7,7 @@ namespace FinanceTrackerApp.Services
         private AppUser? _currentUser;
         public AppUser? CurrentUser => _currentUser;
         public bool IsLoggedIn => _currentUser != null;
+        public string CurrentUserId => _currentUser?.Email ?? "demo-user";
         // fake database (for demo)
         private readonly List<AppUser> _users = new()
         {
