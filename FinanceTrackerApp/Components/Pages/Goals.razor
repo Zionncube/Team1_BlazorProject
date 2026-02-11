@@ -4,6 +4,8 @@
 @page "/goals"
 @using FinanceTrackerApp.Models
 @using System.Globalization
+@inject FinanceTrackerApp.Services.IGoalsStore GoalsStore
+@inject FinanceTrackerApp.Services.AuthService AuthService
 
 <PageTitle>Goals</PageTitle>
 
@@ -25,21 +27,26 @@
         </div>
     </header>
 
-    <div class="grid">
+    <div class="grid goals-grid">
         @foreach (var goal in goals.OrderByDescending(g => g.CreatedAt))
         {
             var percent = GetProgressPercent(goal);
             var remaining = Math.Max(0, goal.TargetAmount - goal.CurrentAmount);
+            var goalContributions = contributions
+                .Where(c => c.GoalId == goal.GoalId)
+                .OrderByDescending(c => c.Date)
+                .ToList();
 
             <article class="goal-card" style="--accent:@goal.Color">
                 <div class="goal-top">
                     <div class="goal-badge">GOAL</div>
                     <div class="goal-menu">
+                        <button class="icon-btn" title="Edit goal" @onclick="() => OpenEditGoal(goal)">Edit</button>
                         <button class="icon-btn" title="Mark complete" @onclick="() => ToggleComplete(goal)">
-                            @(goal.IsCompleted ? "✓" : "○")
+                            @(goal.IsCompleted ? "Done" : "Open")
                         </button>
-                        <button class="icon-btn danger" title="Delete goal" @onclick="() => DeleteGoal(goal.GoalId)">
-                            🗑
+                        <button class="icon-btn danger" title="Delete goal" @onclick="() => OpenDeleteConfirm(goal)">
+                            Del
                         </button>
                     </div>
                 </div>
@@ -52,6 +59,12 @@
                 }
 
                 <div class="goal-stats">
+                    <div class="progress-ring" style="--percent:@percent">
+                        <div class="progress-ring-inner">
+                            <div class="ring-value">@percent%</div>
+                            <div class="ring-label">Progress</div>
+                        </div>
+                    </div>
                     <div class="stat">
                         <span class="label">Saved</span>
                         <span class="value">@goal.CurrentAmount.ToString("C")</span>
@@ -85,7 +98,26 @@
                     <button class="btn btn-soft" @onclick="() => OpenContribute(goal)">
                         + Add money to this goal
                     </button>
+                    <button class="btn btn-ghost" @onclick="() => OpenHistory(goal)">History</button>
                 </div>
+
+                @if (goalContributions.Any())
+                {
+                    <div class="goal-history">
+                        <div class="history-head">
+                            <span>Recent contributions</span>
+                            <button class="link" @onclick="() => OpenHistory(goal)">View all</button>
+                        </div>
+                        @foreach (var item in goalContributions.Take(3))
+                        {
+                            <div class="history-row">
+                                <div class="history-date">@item.Date.ToString("dd MMM yyyy")</div>
+                                <div class="history-note">@item.Note</div>
+                                <div class="history-amount">@item.Amount.ToString("C")</div>
+                            </div>
+                        }
+                    </div>
+                }
             </article>
         }
     </div>
@@ -196,45 +228,141 @@
     </FooterContent>
 </Modal>
 
+<!-- EDIT GOAL MODAL -->
+<Modal IsOpen="@isEditGoalOpen"
+       IsOpenChanged="@(v => isEditGoalOpen = v)"
+       Title="Edit Goal"
+       Subtitle="Update the details for this savings goal.">
+
+    <ChildContent>
+        <div class="form-grid">
+            <div class="field">
+                <label>Goal title</label>
+                <input class="input" placeholder="e.g. Save for Laptop"
+                       @bind="editGoalForm.Title" />
+            </div>
+
+            <div class="field">
+                <label>Description (optional)</label>
+                <input class="input" placeholder="Short note..."
+                       @bind="editGoalForm.Description" />
+            </div>
+
+            <div class="field">
+                <label>Target amount</label>
+                <input class="input" type="number" step="0.01"
+                       @bind="editGoalForm.TargetAmount" />
+            </div>
+
+            <div class="field">
+                <label>Current amount</label>
+                <input class="input" type="number" step="0.01"
+                       @bind="editGoalForm.CurrentAmount" />
+            </div>
+
+            <div class="field">
+                <label>Theme color</label>
+                <input class="input" type="color" @bind="editGoalForm.Color" />
+            </div>
+
+            <div class="field">
+                <label>Target date (optional)</label>
+                <input class="input" type="date"
+                       value="@editGoalTargetDateString"
+                       @onchange="OnEditTargetDateChanged" />
+            </div>
+        </div>
+    </ChildContent>
+
+    <FooterContent>
+        <button class="btn btn-ghost" @onclick="CloseEditGoal">Cancel</button>
+        <button class="btn btn-primary" @onclick="SaveEditedGoal">Save Changes</button>
+    </FooterContent>
+</Modal>
+
+<!-- DELETE CONFIRM MODAL -->
+<Modal IsOpen="@isDeleteConfirmOpen"
+       IsOpenChanged="@(v => isDeleteConfirmOpen = v)"
+       Title="Delete Goal"
+       Subtitle="This action cannot be undone.">
+
+    <ChildContent>
+        <div class="confirm-body">
+            <div class="confirm-title">Delete "@deleteGoalTitle"?</div>
+            <div class="confirm-sub">All contributions for this goal will be removed.</div>
+        </div>
+    </ChildContent>
+
+    <FooterContent>
+        <button class="btn btn-ghost" @onclick="CloseDeleteConfirm">Cancel</button>
+        <button class="btn btn-danger" @onclick="ConfirmDeleteGoal">Delete</button>
+    </FooterContent>
+</Modal>
+
+<!-- CONTRIBUTION HISTORY MODAL -->
+<Modal IsOpen="@isHistoryOpen"
+       IsOpenChanged="@(v => isHistoryOpen = v)"
+       Title="Contribution History"
+       Subtitle="@historySubtitle">
+
+    <ChildContent>
+        @if (historyItems.Any())
+        {
+            <div class="history-list">
+                @foreach (var item in historyItems)
+                {
+                    <div class="history-row">
+                        <div class="history-date">@item.Date.ToString("dd MMM yyyy")</div>
+                        <div class="history-note">@item.Note</div>
+                        <div class="history-amount">@item.Amount.ToString("C")</div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty">No contributions yet for this goal.</div>
+        }
+    </ChildContent>
+
+    <FooterContent>
+        <button class="btn btn-primary" @onclick="CloseHistory">Close</button>
+    </FooterContent>
+</Modal>
+
 @code {
     private List<SavingsGoal> goals = new();
+    private List<GoalContribution> contributions = new();
 
     private bool isAddGoalOpen = false;
     private bool isAddMoneyOpen = false;
+    private bool isEditGoalOpen = false;
+    private bool isDeleteConfirmOpen = false;
+    private bool isHistoryOpen = false;
 
     private SavingsGoal goalForm = new();
     private string goalTargetDateString = "";
+
+    private SavingsGoal editGoalForm = new();
+    private Guid editGoalId = Guid.Empty;
+    private string editGoalTargetDateString = "";
 
     private Guid selectedGoalId;
     private decimal contributionAmount = 0;
     private string contributionNote = "";
     private string contributionDateString = DateTime.Today.ToString("yyyy-MM-dd");
 
-    protected override void OnInitialized()
-    {
-        // Demo data (remove later when Firebase is connected)
-        goals = new List<SavingsGoal>
-        {
-            new SavingsGoal
-            {
-                Title = "Save for Laptop",
-                Description = "New laptop for coding & projects",
-                TargetAmount = 5000,
-                CurrentAmount = 1350,
-                TargetDate = DateTime.Today.AddMonths(4),
-                Color = "#2BEF83"
-            },
-            new SavingsGoal
-            {
-                Title = "Emergency Fund",
-                Description = "3 months safety buffer",
-                TargetAmount = 12000,
-                CurrentAmount = 4200,
-                TargetDate = DateTime.Today.AddMonths(10),
-                Color = "#4EE3FF"
-            }
-        };
+    private Guid deleteGoalId = Guid.Empty;
+    private string deleteGoalTitle = "";
 
+    private string historySubtitle = "";
+    private List<GoalContribution> historyItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = AuthService.CurrentUserId;
+        goals = await GoalsStore.GetGoalsAsync(userId);
+        contributions = await GoalsStore.GetContributionsAsync(userId);
         selectedGoalId = goals.FirstOrDefault()?.GoalId ?? Guid.Empty;
     }
 
@@ -254,12 +382,11 @@
 
     private void CloseAddGoal() => isAddGoalOpen = false;
 
-    private void CreateGoal()
+    private async Task CreateGoal()
     {
         if (string.IsNullOrWhiteSpace(goalForm.Title))
             return;
 
-        // Parse goal target date safely
         if (!string.IsNullOrWhiteSpace(goalTargetDateString) &&
             DateTime.TryParseExact(goalTargetDateString, "yyyy-MM-dd", CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var dt))
@@ -271,6 +398,8 @@
             goalForm.TargetDate = null;
         }
 
+        var userId = AuthService.CurrentUserId;
+        await GoalsStore.SaveGoalAsync(userId, goalForm);
         goals.Insert(0, goalForm);
         isAddGoalOpen = false;
     }
@@ -295,7 +424,7 @@
 
     private void CloseAddMoney() => isAddMoneyOpen = false;
 
-    private void AddMoney()
+    private async Task AddMoney()
     {
         if (selectedGoalId == Guid.Empty || contributionAmount <= 0)
             return;
@@ -303,17 +432,27 @@
         var goal = goals.FirstOrDefault(g => g.GoalId == selectedGoalId);
         if (goal is null) return;
 
-        // Parse contribution date (even if not used yet)
         DateTime contributionDate = DateTime.Today;
         DateTime.TryParseExact(contributionDateString, "yyyy-MM-dd", CultureInfo.InvariantCulture,
             DateTimeStyles.None, out contributionDate);
-
-        // You can use contributionDate later for logging contributions
 
         goal.CurrentAmount += contributionAmount;
 
         if (goal.CurrentAmount >= goal.TargetAmount)
             goal.IsCompleted = true;
+
+        var contribution = new GoalContribution
+        {
+            GoalId = goal.GoalId,
+            Amount = contributionAmount,
+            Date = contributionDate,
+            Note = contributionNote
+        };
+
+        var userId = AuthService.CurrentUserId;
+        await GoalsStore.SaveGoalAsync(userId, goal);
+        await GoalsStore.AddContributionAsync(userId, contribution);
+        contributions.Add(contribution);
 
         isAddMoneyOpen = false;
     }
@@ -321,12 +460,93 @@
     private void ToggleComplete(SavingsGoal goal)
     {
         goal.IsCompleted = !goal.IsCompleted;
+        _ = GoalsStore.SaveGoalAsync(AuthService.CurrentUserId, goal);
     }
 
-    private void DeleteGoal(Guid id)
+    private void OpenEditGoal(SavingsGoal goal)
     {
-        goals.RemoveAll(g => g.GoalId == id);
+        editGoalId = goal.GoalId;
+        editGoalForm = new SavingsGoal
+        {
+            GoalId = goal.GoalId,
+            Title = goal.Title,
+            Description = goal.Description,
+            TargetAmount = goal.TargetAmount,
+            CurrentAmount = goal.CurrentAmount,
+            TargetDate = goal.TargetDate,
+            IsCompleted = goal.IsCompleted,
+            Color = goal.Color,
+            CreatedAt = goal.CreatedAt
+        };
+        editGoalTargetDateString = goal.TargetDate?.ToString("yyyy-MM-dd") ?? "";
+        isEditGoalOpen = true;
     }
+
+    private void CloseEditGoal() => isEditGoalOpen = false;
+
+    private async Task SaveEditedGoal()
+    {
+        var goal = goals.FirstOrDefault(g => g.GoalId == editGoalId);
+        if (goal is null) return;
+
+        if (!string.IsNullOrWhiteSpace(editGoalTargetDateString) &&
+            DateTime.TryParseExact(editGoalTargetDateString, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var dt))
+        {
+            editGoalForm.TargetDate = dt;
+        }
+        else
+        {
+            editGoalForm.TargetDate = null;
+        }
+
+        goal.Title = editGoalForm.Title;
+        goal.Description = editGoalForm.Description;
+        goal.TargetAmount = editGoalForm.TargetAmount;
+        goal.CurrentAmount = editGoalForm.CurrentAmount;
+        goal.TargetDate = editGoalForm.TargetDate;
+        goal.Color = editGoalForm.Color;
+
+        if (goal.CurrentAmount >= goal.TargetAmount)
+            goal.IsCompleted = true;
+
+        await GoalsStore.SaveGoalAsync(AuthService.CurrentUserId, goal);
+        isEditGoalOpen = false;
+    }
+
+    private void OpenDeleteConfirm(SavingsGoal goal)
+    {
+        deleteGoalId = goal.GoalId;
+        deleteGoalTitle = goal.Title;
+        isDeleteConfirmOpen = true;
+    }
+
+    private void CloseDeleteConfirm() => isDeleteConfirmOpen = false;
+
+    private async Task ConfirmDeleteGoal()
+    {
+        if (deleteGoalId == Guid.Empty) return;
+
+        var userId = AuthService.CurrentUserId;
+        await GoalsStore.DeleteContributionsForGoalAsync(userId, deleteGoalId);
+        await GoalsStore.DeleteGoalAsync(userId, deleteGoalId);
+
+        goals.RemoveAll(g => g.GoalId == deleteGoalId);
+        contributions.RemoveAll(c => c.GoalId == deleteGoalId);
+        isDeleteConfirmOpen = false;
+    }
+
+    private void OpenHistory(SavingsGoal goal)
+    {
+        historySubtitle = goal.Title;
+        historyItems = contributions
+            .Where(c => c.GoalId == goal.GoalId)
+            .OrderByDescending(c => c.Date)
+            .ToList();
+        isHistoryOpen = true;
+    }
+
+    private void CloseHistory() => isHistoryOpen = false;
 
     private int GetProgressPercent(SavingsGoal goal)
     {
@@ -338,6 +558,11 @@
     private void OnTargetDateChanged(ChangeEventArgs e)
     {
         goalTargetDateString = e.Value?.ToString() ?? "";
+    }
+
+    private void OnEditTargetDateChanged(ChangeEventArgs e)
+    {
+        editGoalTargetDateString = e.Value?.ToString() ?? "";
     }
 
     private void OnContributionDateChanged(ChangeEventArgs e)

@@ -1,5 +1,6 @@
 using FinanceTrackerApp.Components;
 using FinanceTrackerApp.Services;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSingleton<AuthService>();
+builder.Services.Configure<FirebaseOptions>(builder.Configuration.GetSection("Firebase"));
+builder.Services.AddHttpClient("firebase");
+builder.Services.AddSingleton<IGoalsStore>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<FirebaseOptions>>().Value;
+    if (string.IsNullOrWhiteSpace(options.DatabaseUrl))
+    {
+        return new InMemoryGoalsStore();
+    }
+
+    var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("firebase");
+    return new FirebaseGoalsStore(http, options);
+});
 
 var app = builder.Build();
 

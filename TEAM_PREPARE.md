@@ -173,3 +173,137 @@ To use sandbox bank integrations like Plaid or Yodlee, you will need to write so
 5. Use their test credentials to simulate linking accounts and importing transactions.
 
 These sandboxes allow you to build and test your app’s bank integration features safely and for free, using fake accounts and transactions.
+
+
+
+======================================================================================================
+During the meeting, must ask these questions in order
+
+What is DONE?
+
+Go through the board and mark completed tasks.
+
+Question:
+
+“What is fully working and tested?”
+
+
+
+You want finished, not in-progress.
+
+What is IN PROGRESS?
+
+For each teammate:
+
+“What exactly are you finishing this week?”
+
+Then ask:
+
+“What’s your estimated completion day?”
+
+Example:
+
+Login page → Wednesday
+Firebase connection → Thursday
+UI polish → Friday
+
+
+
+(Deadlines make work real.)
+
+ What is BLOCKING anyone?
+
+Question:
+“Is anything stopping you from finishing?”
+
+Common blockers:
+
+Confusion about code
+Merge conflicts
+Missing features
+Time issues
+
+my job:
+Help remove blockers or reassign help.
+
+
+Create a clear final checklist
+
+After the meeting, summarize:
+
+What must be done before submission:
+
+ Login + signup pages complete
+ Goals feature working
+ Transactions working
+ Firebase connected
+ UI cleaned
+ Final testing
+ Deployment/demo ready
+
+Then assign ownership:
+
+Person A → Authentication
+Person B → Database/Firebase
+Person C → UI polish
+You → Integration + testing
+
+Introduce mini deadlines
+
+
+“Core features done by Thursday”
+“Testing + polish on Friday”
+
+
+
+
+Daily 5-minute check-ins
+
+Send a short daily message:
+
+Quick daily check-in:
+
+ What did you finish today?
+ What are you working on next?
+ Any blockers?
+
+Let’s keep momentum — we’re close 
+
+
+
+
+
+What to do if someone is behind
+
+Say this:
+
+Hey — I noticed your task is still in progress and we’re getting close to the deadline. Do you need help finishing it? We can split it or pair program if needed.
+
+
+
+leadership script for the week
+
+
+Make work visible
+Assign ownership
+Set mini deadlines
+Check progress daily
+Help unblock people
+
+
+
+This week priority checklist**
+1. Must-fix now (highest impact)
+- Wire Firebase config (`DatabaseUrl`, `AuthToken`) and verify goals persist.
+- Make transactions true CRUD (add/edit/delete + persistence), not in-memory only.
+- Connect dashboard values to real transaction data.
+
+2. Core feature completion
+- Finish `Analytics` page with actual charts/data (`FinanceTrackerApp/Components/Pages/Analytics.razor:5` is placeholder).
+- Finish `Categories` management CRUD (`FinanceTrackerApp/Components/Pages/Categories.razor:5`).
+- Finish `Settings` with real account/preferences controls (`FinanceTrackerApp/Components/Pages/Settings.razor:5`).
+
+3. Quality + submission readiness
+- Add at least one test project (none exists yet).
+- Replace demo auth model (plain password/in-memory) with secure auth path.
+- Final README with setup, architecture, routes, and demo flow.

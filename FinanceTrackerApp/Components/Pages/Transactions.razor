@@ -42,29 +42,24 @@
             <div style="text-align:right;">Amount</div>
         </div>
 
-        <div class="table-row">
-            <div class="muted">Today</div>
-            <div class="strong">Groceries</div>
-            <div><span class="pill">Food</span></div>
-            <div><span class="badge badge-expense">Expense</span></div>
-            <div class="amount expense" style="text-align:right;">- $28.40</div>
-        </div>
+        @foreach (var tx in transactions.OrderByDescending(t => t.Date))
+        {
+            var isIncome = string.Equals(tx.Type, "income", StringComparison.OrdinalIgnoreCase);
+            var amountCss = isIncome ? "income" : "expense";
+            var badgeCss = isIncome ? "badge-income" : "badge-expense";
+            var sign = isIncome ? "+" : "-";
+            var typeLabel = isIncome ? "Income" : "Expense";
+            var description = string.IsNullOrWhiteSpace(tx.Description) ? "Transaction" : tx.Description;
+            var category = string.IsNullOrWhiteSpace(tx.Category) ? "General" : tx.Category;
 
-        <div class="table-row">
-            <div class="muted">Yesterday</div>
-            <div class="strong">Taxi Ride</div>
-            <div><span class="pill">Transport</span></div>
-            <div><span class="badge badge-expense">Expense</span></div>
-            <div class="amount expense" style="text-align:right;">- $12.00</div>
-        </div>
-
-        <div class="table-row">
-            <div class="muted">Jan 25</div>
-            <div class="strong">Salary Payment</div>
-            <div><span class="pill">Salary</span></div>
-            <div><span class="badge badge-income">Income</span></div>
-            <div class="amount income" style="text-align:right;">+ $1,200.00</div>
-        </div>
+            <div class="table-row">
+                <div class="muted">@tx.Date.ToString("MMM dd")</div>
+                <div class="strong">@description</div>
+                <div><span class="pill">@category</span></div>
+                <div><span class="badge @badgeCss">@typeLabel</span></div>
+                <div class="amount @amountCss" style="text-align:right;">@sign @tx.Amount.ToString("C")</div>
+            </div>
+        }
     </div>
 
 </div>
