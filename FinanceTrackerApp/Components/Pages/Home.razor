@@ -58,7 +58,18 @@
             <div class="tx">
                 <div class="tx-left">
                     <div class="tx-icon">
-                        @(tx.Type == "income" ? "💼" : "🛒")
+                        @(tx.Type == "income" ? "💵" : tx.Category switch
+                        {
+                            "General" => "📝",
+                            "Food" => "🍔",
+                            "Bills" => "💡",
+                            "Health / Medical" => "💊",
+                            "Personal" => "👤",
+                            "Entertainment" => "🎬",
+                            "Housing / Rent" => "🏠",
+                            "Transportation" => "🚗",
+                            _ => "❓"  // fallback for unknown expense
+                        })
                     </div>
                     <div>
                         <div class="tx-title" style="color: var(--text);">@tx.Description</div>

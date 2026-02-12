@@ -10,7 +10,6 @@ public class Transaction
     public string UserId { get; set; } = "demo-user"; // temporary for UI stage
 
     [Required(ErrorMessage = "Amount is required!")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0!")]
     public decimal Amount { get; set; }
 
     [Required(ErrorMessage = "Category is required!")]
