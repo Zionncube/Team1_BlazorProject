@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FinanceTrackerApp.Migrations
 {
     [DbContext(typeof(FinanceDbContext))]
-    [Migration("20260212040247_InitialCreate")]
+    [Migration("20260212143951_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
