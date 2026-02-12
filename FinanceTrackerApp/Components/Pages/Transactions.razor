@@ -8,7 +8,7 @@
 
     <div class="page-head">
         <div>
-            <h2 style="margin:0;">Transactions</h2>
+            <h2 style="margin:0; color: var(--text);">Transactions</h2>
             <p style="margin:.25rem 0 0 0;">Manage your income and expenses.</p>
         </div>
 
@@ -27,10 +27,14 @@
 
         <select class="input" @bind="filterCategory">
             <option value="">All Categories</option>
-            <option>Food</option>
-            <option>Transport</option>
-            <option>Salary</option>
-            <option>Rent</option>
+            <option value="General">General</option>
+            <option value="Food">Food</option>
+            <option value="Bills">Bills</option>
+            <option value="Health / Medical">Health / Medical</option>
+            <option value="Personal">Personal</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Housing / Rent">Housing / Rent</option>
+            <option value="Transportation">Transportation</option>
         </select>
     </div>
 
@@ -41,8 +45,7 @@
             <div>Description</div>
             <div>Category</div>
             <div>Type</div>
-            <div style="text-align:right;">Amount</div>
-            <div>Actions</div>
+            <div>Amount</div>
         </div>
 
         @foreach (var tx in FilteredTransactions)
@@ -51,11 +54,12 @@
 
             <div class="table-row" @key="currentTx.TransactionId">
                 <div class="muted">@currentTx.Date.ToShortDateString()</div>
-                <div class="strong">@currentTx.Description</div>
+                <div class="strong" style="color: var(--text)">@currentTx.Description</div>
                 <div><span class="pill">@currentTx.Category</span></div>
-                <div><span class="badge @(currentTx.Type=="income"?"badge-income":"badge-expense")">@currentTx.Type</span></div>
-                <div class="amount @(currentTx.Type=="income"?"income":"expense")" style="text-align:right;">
-                    @(currentTx.Type=="income"?"+":"-") $@currentTx.Amount
+                <div><span class="pill @(currentTx.Type == "income" ? "badge-income" : "badge-expense")">@currentTx.Type</span>
+                </div>
+                <div class="amount @(currentTx.Type == "income" ? "income" : "expense")">
+                    @(currentTx.Type == "income" ? "+" : "-") $@currentTx.Amount.ToString("F2")
                 </div>
                 <div>
                     <a class="btn btn-sm btn-primary" href="@($"/edit-transaction/{currentTx.TransactionId}")">Edit</a>

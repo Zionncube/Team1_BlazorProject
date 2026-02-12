@@ -87,6 +87,14 @@ a:hover {
   gap: .7rem;
 }
 
+.validation-summary {
+  margin-right: 40px;
+  font-size: 18px;
+  text-align: center;
+  list-style: none;
+  color: #ff5a7a;
+}
+
 .btn {
   border: 1px solid var(--border);
   padding: .65rem 1rem;
@@ -520,6 +528,7 @@ a:hover {
   font-weight: 900;
   color: rgba(234,255,242,0.8);
   background: rgba(255,255,255,0.04);
+  border-radius: 15px;
 }
 
 @media (max-width: 900px) {

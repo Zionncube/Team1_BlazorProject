@@ -312,7 +312,6 @@ C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_Blazo
 C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\scopedcss\Components\Layout\ReconnectModal.razor.rz.scp.css
 C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\scopedcss\bundle\FinanceTrackerApp.styles.css
 C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\scopedcss\projectbundle\FinanceTrackerApp.bundle.scp.css
-C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\compressed\ejd7rzayz5-{0}-bkbjsflz12-bkbjsflz12.gz
 C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\compressed\gxegfdkyvf-{0}-bqjiyaj88i-bqjiyaj88i.gz
 C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\compressed\f9c4sldfg6-{0}-c2jlpeoesf-c2jlpeoesf.gz
 C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\compressed\hg906rmcsx-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -373,3 +372,4 @@ C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_Blazo
 C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\FinanceTrackerApp.pdb
 C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\FinanceTrackerApp.genruntimeconfig.cache
 C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\ref\FinanceTrackerApp.dll
+C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\obj\Debug\net10.0\compressed\ejd7rzayz5-{0}-9i3wanf2vn-9i3wanf2vn.gz

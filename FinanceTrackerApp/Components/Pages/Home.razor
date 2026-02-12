@@ -1,60 +1,74 @@
 ﻿@page "/"
+@using FinanceTrackerApp.Models
+@using FinanceTrackerApp.Services
+@inject TransactionService TransactionService
+
+@code {
+    private List<Transaction> transactions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        transactions = await TransactionService.GetAllAsync();
+    }
+
+    private decimal TotalBalance => transactions.Sum(t => t.Type == "income" ? t.Amount : -t.Amount);
+
+    private decimal MonthlyIncome => transactions
+        .Where(t => t.Type == "income" && t.Date.Month == DateTime.Today.Month && t.Date.Year == DateTime.Today.Year)
+        .Sum(t => t.Amount);
+
+    private decimal MonthlyExpenses => transactions
+        .Where(t => t.Type == "expense" && t.Date.Month == DateTime.Today.Month && t.Date.Year == DateTime.Today.Year)
+        .Sum(t => t.Amount);
+}
+
 
 <div class="glass card">
-    <h2>Dashboard</h2>
+    <h1 style="color: var(--text);">Dashboard</h1>
     <p>Your money overview. Clean. Private. Powerful.</p>
 
     <div class="kpis">
         <div class="glass kpi">
             <div class="label">Total Balance</div>
-            <div class="value positive">$ 12,540</div>
+            <div class="value @(TotalBalance >= 0 ? "positive" : "negative")">
+                $@TotalBalance.ToString("F2")
+            </div>
         </div>
 
         <div class="glass kpi">
             <div class="label">Monthly Income</div>
-            <div class="value income">$ 4,850</div>
+            <div class="value income" style="color: var(--text);">
+                $@MonthlyIncome.ToString("F2")
+            </div>
         </div>
 
         <div class="glass kpi">
             <div class="label">Monthly Expenses</div>
-            <div class="value negative">$ 1,920</div>
+            <div class="value negative">
+                $@MonthlyExpenses.ToString("F2")
+            </div>
         </div>
     </div>
 
     <div style="margin-top: 1.1rem;">
-        <h2 style="margin-bottom: .6rem;">Recent Transactions</h2>
+        <h2 style="margin-bottom: .6rem; color: var(--text);">Recent Transactions</h2>
 
-        <div class="tx">
-            <div class="tx-left">
-                <div class="tx-icon">🛒</div>
-                <div>
-                    <div class="tx-title">Groceries</div>
-                    <div class="tx-sub">Food • Today</div>
+        @foreach (var tx in transactions.Take(5))
+        {
+            <div class="tx">
+                <div class="tx-left">
+                    <div class="tx-icon">
+                        @(tx.Type == "income" ? "💼" : "🛒")
+                    </div>
+                    <div>
+                        <div class="tx-title" style="color: var(--text);">@tx.Description</div>
+                        <div class="tx-sub">@tx.Category • @tx.Date.ToShortDateString()</div>
+                    </div>
+                </div>
+                <div class="amount @(tx.Type == "income" ? "income" : "expense")">
+                    @(tx.Type == "income" ? "+" : "-") $@tx.Amount.ToString("F2")
                 </div>
             </div>
-            <div class="amount expense">- $ 28.40</div>
-        </div>
-
-        <div class="tx">
-            <div class="tx-left">
-                <div class="tx-icon">🚕</div>
-                <div>
-                    <div class="tx-title">Transport</div>
-                    <div class="tx-sub">Taxi • Yesterday</div>
-                </div>
-            </div>
-            <div class="amount expense">- $ 12.00</div>
-        </div>
-
-        <div class="tx">
-            <div class="tx-left">
-                <div class="tx-icon">💼</div>
-                <div>
-                    <div class="tx-title">Salary</div>
-                    <div class="tx-sub">Income • Jan 25</div>
-                </div>
-            </div>
-            <div class="amount income">+ $ 1,200.00</div>
-        </div>
+        }
     </div>
 </div>
