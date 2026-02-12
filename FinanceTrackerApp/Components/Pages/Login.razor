@@ -44,11 +44,11 @@
     private string password = "";
     private string error = "";
 
-    private void HandleLogin()
+    private async Task HandleLogin()
     {
         error = "";
 
-        var ok = Auth.Login(email, password);
+        var ok = await Auth.LoginAsync(email, password);
 
         if (!ok)
         {
@@ -56,6 +56,22 @@
             return;
         }
 
-        Nav.NavigateTo("/");
+        var returnUrl = GetReturnUrl();
+        Nav.NavigateTo(returnUrl);
+    }
+
+    private string GetReturnUrl()
+    {
+        var uri = new Uri(Nav.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("returnUrl", out var returnUrl) &&
+            !string.IsNullOrWhiteSpace(returnUrl))
+        {
+            var value = returnUrl!.ToString();
+            if (value.StartsWith("/") && !value.StartsWith("//"))
+                return value;
+        }
+
+        return "/";
     }
 }

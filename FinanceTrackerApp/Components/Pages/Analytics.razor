@@ -1,6 +1,227 @@
 @page "/analytics"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using FinanceTrackerApp.Models
+@inject FinanceTrackerApp.Services.ITransactionsStore TransactionsStore
+@inject FinanceTrackerApp.Services.AuthService AuthService
 
-<div class="glass card">
-    <h2>Analytics</h2>
-    <p>Charts and insights will appear here (income vs expenses, category spending).</p>
-</div>
+<section class="analytics-page">
+    <div class="glass card">
+        <div class="page-head">
+            <div>
+                <h2 style="margin:0;">Analytics</h2>
+                <p style="margin:.25rem 0 0 0;">Track spending patterns and cashflow performance.</p>
+            </div>
+
+            <div class="analytics-controls">
+                <select class="input analytics-select" @bind="selectedRange">
+                    <option value="30">Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="180">Last 6 months</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="analytics-kpis">
+            <div class="glass analytics-kpi">
+                <span class="label">Income</span>
+                <span class="value income">@TotalIncome.ToString("C")</span>
+            </div>
+            <div class="glass analytics-kpi">
+                <span class="label">Expenses</span>
+                <span class="value expense">@TotalExpense.ToString("C")</span>
+            </div>
+            <div class="glass analytics-kpi">
+                <span class="label">Net</span>
+                <span class="value @(Net >= 0 ? "income" : "expense")">@Net.ToString("C")</span>
+            </div>
+            <div class="glass analytics-kpi">
+                <span class="label">Savings Rate</span>
+                <span class="value">@SavingsRate.ToString("0.0")%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="analytics-grid">
+        <article class="glass card">
+            <h3 class="analytics-title">Category Spend</h3>
+            @if (!CategoryBreakdown.Any())
+            {
+                <p>No expense data in this period.</p>
+            }
+            else
+            {
+                <ApexChart TItem="CategorySlice" Options="donutOptions" Title="Expense Breakdown">
+                    <ApexPointSeries TItem="CategorySlice"
+                                     Items="CategoryBreakdown"
+                                     Name="Amount"
+                                     SeriesType="SeriesType.Donut"
+                                     XValue="e => e.Category"
+                                     YValue="e => e.Total" />
+                </ApexChart>
+            }
+        </article>
+
+        <article class="glass card">
+            <h3 class="analytics-title">Monthly Income vs Expense</h3>
+            @if (!MonthlyTrend.Any())
+            {
+                <p>No trend data available.</p>
+            }
+            else
+            {
+                <ApexChart TItem="MonthTrendItem" Options="barOptions" Title="Monthly Trend">
+                    <ApexPointSeries TItem="MonthTrendItem"
+                                     Items="MonthlyTrend"
+                                     Name="Income"
+                                     SeriesType="SeriesType.Bar"
+                                     XValue="e => e.MonthLabel"
+                                     YValue="e => e.Income" />
+                    <ApexPointSeries TItem="MonthTrendItem"
+                                     Items="MonthlyTrend"
+                                     Name="Expense"
+                                     SeriesType="SeriesType.Bar"
+                                     XValue="e => e.MonthLabel"
+                                     YValue="e => e.Expense" />
+                </ApexChart>
+            }
+        </article>
+    </div>
+
+    <article class="glass card">
+        <h3 class="analytics-title">Top Expense Transactions</h3>
+        @if (!TopExpenses.Any())
+        {
+            <p>No expense transactions in this period.</p>
+        }
+        else
+        {
+            <div class="analytics-table">
+                <div class="analytics-table-head">
+                    <span>Date</span>
+                    <span>Description</span>
+                    <span>Category</span>
+                    <span>Amount</span>
+                </div>
+                @foreach (var tx in TopExpenses)
+                {
+                    <div class="analytics-table-row">
+                        <span>@tx.Date.ToString("dd MMM")</span>
+                        <span>@tx.Description</span>
+                        <span>@tx.Category</span>
+                        <span class="expense">@tx.Amount.ToString("C")</span>
+                    </div>
+                }
+            </div>
+        }
+    </article>
+</section>
+
+@code {
+    private int selectedRange = 90;
+    private string currentUserId = "demo-user";
+    private List<Transaction> allTransactions = new();
+
+    private readonly ApexChartOptions<CategorySlice> donutOptions = new()
+    {
+        Theme = new Theme { Mode = Mode.Dark },
+        Legend = new Legend { Position = LegendPosition.Bottom },
+        DataLabels = new DataLabels { Enabled = true }
+    };
+
+    private readonly ApexChartOptions<MonthTrendItem> barOptions = new()
+    {
+        Theme = new Theme { Mode = Mode.Dark },
+        PlotOptions = new PlotOptions
+        {
+            Bar = new PlotOptionsBar
+            {
+                BorderRadius = 4,
+                ColumnWidth = "50%"
+            }
+        },
+        DataLabels = new DataLabels { Enabled = false },
+        Legend = new Legend { Position = LegendPosition.Top }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUserId = await AuthService.GetCurrentUserIdAsync();
+        allTransactions = await TransactionsStore.GetTransactionsAsync(currentUserId);
+    }
+
+    private IEnumerable<Transaction> InRangeTransactions =>
+        allTransactions.Where(t => t.Date >= DateTime.Today.AddDays(-selectedRange));
+
+    private decimal TotalIncome =>
+        InRangeTransactions
+            .Where(IsIncome)
+            .Sum(t => t.Amount);
+
+    private decimal TotalExpense =>
+        InRangeTransactions
+            .Where(IsExpense)
+            .Sum(t => t.Amount);
+
+    private decimal Net => TotalIncome - TotalExpense;
+
+    private decimal SavingsRate =>
+        TotalIncome <= 0 ? 0 : (Net / TotalIncome) * 100m;
+
+    private List<CategorySlice> CategoryBreakdown
+    {
+        get
+        {
+            var expenses = InRangeTransactions.Where(IsExpense).ToList();
+            if (!expenses.Any()) return new();
+
+            return expenses
+                .GroupBy(x => string.IsNullOrWhiteSpace(x.Category) ? "General" : x.Category)
+                .Select(g => new CategorySlice
+                {
+                    Category = g.Key,
+                    Total = g.Sum(x => x.Amount)
+                })
+                .OrderByDescending(x => x.Total)
+                .ToList();
+        }
+    }
+
+    private List<MonthTrendItem> MonthlyTrend =>
+        InRangeTransactions
+            .GroupBy(x => new { x.Date.Year, x.Date.Month })
+            .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
+            .Select(g => new MonthTrendItem
+            {
+                MonthLabel = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy"),
+                Income = g.Where(IsIncome).Sum(x => x.Amount),
+                Expense = g.Where(IsExpense).Sum(x => x.Amount)
+            })
+            .ToList();
+
+    private List<Transaction> TopExpenses =>
+        InRangeTransactions
+            .Where(IsExpense)
+            .OrderByDescending(x => x.Amount)
+            .Take(5)
+            .ToList();
+
+    private static bool IsIncome(Transaction t) =>
+        string.Equals(t.Type, "income", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsExpense(Transaction t) =>
+        string.Equals(t.Type, "expense", StringComparison.OrdinalIgnoreCase);
+
+    private class CategorySlice
+    {
+        public string Category { get; set; } = "General";
+        public decimal Total { get; set; }
+    }
+
+    private class MonthTrendItem
+    {
+        public string MonthLabel { get; set; } = "";
+        public decimal Income { get; set; }
+        public decimal Expense { get; set; }
+    }
+}
