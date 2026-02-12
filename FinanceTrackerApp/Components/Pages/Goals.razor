@@ -2,6 +2,8 @@
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Routing
 @page "/goals"
+@attribute [Authorize]
+@rendermode InteractiveServer
 @using FinanceTrackerApp.Models
 @using System.Globalization
 @inject FinanceTrackerApp.Services.IGoalsStore GoalsStore
@@ -139,6 +141,10 @@
        Subtitle="Set a target amount and optional deadline.">
 
     <ChildContent>
+        @if (!string.IsNullOrWhiteSpace(goalCreateError))
+        {
+            <div class="alert">@goalCreateError</div>
+        }
         <div class="form-grid">
             <div class="field">
                 <label>Goal title</label>
@@ -357,17 +363,21 @@
 
     private string historySubtitle = "";
     private List<GoalContribution> historyItems = new();
+    private string goalCreateError = "";
+
+    private string currentUserId = "demo-user";
 
     protected override async Task OnInitializedAsync()
     {
-        var userId = AuthService.CurrentUserId;
-        goals = await GoalsStore.GetGoalsAsync(userId);
-        contributions = await GoalsStore.GetContributionsAsync(userId);
+        currentUserId = await AuthService.GetCurrentUserIdAsync();
+        goals = await GoalsStore.GetGoalsAsync(currentUserId);
+        contributions = await GoalsStore.GetContributionsAsync(currentUserId);
         selectedGoalId = goals.FirstOrDefault()?.GoalId ?? Guid.Empty;
     }
 
     private void OpenAddGoal()
     {
+        goalCreateError = "";
         goalForm = new SavingsGoal
         {
             Title = "",
@@ -384,8 +394,20 @@
 
     private async Task CreateGoal()
     {
+        goalCreateError = "";
+
+        goalForm.Title = goalForm.Title?.Trim() ?? "";
         if (string.IsNullOrWhiteSpace(goalForm.Title))
+        {
+            goalCreateError = "Please enter a goal title.";
             return;
+        }
+
+        if (goalForm.TargetAmount <= 0)
+        {
+            goalCreateError = "Target amount must be greater than 0.";
+            return;
+        }
 
         if (!string.IsNullOrWhiteSpace(goalTargetDateString) &&
             DateTime.TryParseExact(goalTargetDateString, "yyyy-MM-dd", CultureInfo.InvariantCulture,
@@ -398,10 +420,24 @@
             goalForm.TargetDate = null;
         }
 
-        var userId = AuthService.CurrentUserId;
-        await GoalsStore.SaveGoalAsync(userId, goalForm);
-        goals.Insert(0, goalForm);
-        isAddGoalOpen = false;
+        if (string.IsNullOrWhiteSpace(currentUserId))
+            currentUserId = await AuthService.GetCurrentUserIdAsync();
+
+        if (goalForm.GoalId == Guid.Empty)
+            goalForm.GoalId = Guid.NewGuid();
+        if (goalForm.CreatedAt == default)
+            goalForm.CreatedAt = DateTime.Now;
+
+        try
+        {
+            await GoalsStore.SaveGoalAsync(currentUserId, goalForm);
+            goals.Insert(0, goalForm);
+            isAddGoalOpen = false;
+        }
+        catch
+        {
+            goalCreateError = "Could not save goal right now. Please try again.";
+        }
     }
 
     private void OpenAddMoney()
@@ -449,9 +485,8 @@
             Note = contributionNote
         };
 
-        var userId = AuthService.CurrentUserId;
-        await GoalsStore.SaveGoalAsync(userId, goal);
-        await GoalsStore.AddContributionAsync(userId, contribution);
+        await GoalsStore.SaveGoalAsync(currentUserId, goal);
+        await GoalsStore.AddContributionAsync(currentUserId, contribution);
         contributions.Add(contribution);
 
         isAddMoneyOpen = false;
@@ -460,7 +495,7 @@
     private void ToggleComplete(SavingsGoal goal)
     {
         goal.IsCompleted = !goal.IsCompleted;
-        _ = GoalsStore.SaveGoalAsync(AuthService.CurrentUserId, goal);
+        _ = GoalsStore.SaveGoalAsync(currentUserId, goal);
     }
 
     private void OpenEditGoal(SavingsGoal goal)
@@ -510,7 +545,7 @@
         if (goal.CurrentAmount >= goal.TargetAmount)
             goal.IsCompleted = true;
 
-        await GoalsStore.SaveGoalAsync(AuthService.CurrentUserId, goal);
+        await GoalsStore.SaveGoalAsync(currentUserId, goal);
         isEditGoalOpen = false;
     }
 
@@ -527,9 +562,8 @@
     {
         if (deleteGoalId == Guid.Empty) return;
 
-        var userId = AuthService.CurrentUserId;
-        await GoalsStore.DeleteContributionsForGoalAsync(userId, deleteGoalId);
-        await GoalsStore.DeleteGoalAsync(userId, deleteGoalId);
+        await GoalsStore.DeleteContributionsForGoalAsync(currentUserId, deleteGoalId);
+        await GoalsStore.DeleteGoalAsync(currentUserId, deleteGoalId);
 
         goals.RemoveAll(g => g.GoalId == deleteGoalId);
         contributions.RemoveAll(c => c.GoalId == deleteGoalId);

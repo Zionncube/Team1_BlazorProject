@@ -45,7 +45,7 @@
     private AppUser user = new();
     private string error = "";
 
-    private void HandleRegister()
+    private async Task HandleRegister()
     {
         error = "";
 
@@ -57,7 +57,7 @@
             return;
         }
 
-        var ok = Auth.Register(user);
+        var ok = await Auth.RegisterAsync(user);
 
         if (!ok)
         {

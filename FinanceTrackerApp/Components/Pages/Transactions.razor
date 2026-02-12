@@ -1,6 +1,9 @@
 @page "/transactions"
-
+@attribute [Authorize]
+@rendermode InteractiveServer
 @using FinanceTrackerApp.Models
+@inject FinanceTrackerApp.Services.ITransactionsStore TransactionsStore
+@inject FinanceTrackerApp.Services.AuthService AuthService
 
 <div class="glass card">
 
@@ -16,20 +19,21 @@
     </div>
 
     <div class="filters glass">
-        <input class="input" placeholder="Search transactions (e.g. taxi, groceries, salary)..." />
+        <input class="input" placeholder="Search transactions (e.g. taxi, groceries, salary)..."
+               @bind="searchTerm" />
 
-        <select class="input">
-            <option>All Types</option>
-            <option>Income</option>
-            <option>Expense</option>
+        <select class="input" @bind="selectedType">
+            <option value="">All Types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
         </select>
 
-        <select class="input">
-            <option>All Categories</option>
-            <option>Food</option>
-            <option>Transport</option>
-            <option>Salary</option>
-            <option>Rent</option>
+        <select class="input" @bind="selectedCategory">
+            <option value="">All Categories</option>
+            @foreach (var cat in CategoryOptions)
+            {
+                <option value="@cat">@cat</option>
+            }
         </select>
     </div>
 
@@ -42,44 +46,69 @@
             <div style="text-align:right;">Amount</div>
         </div>
 
-        @foreach (var tx in transactions.OrderByDescending(t => t.Date))
+        @if (!FilteredTransactions.Any())
         {
-            var isIncome = string.Equals(tx.Type, "income", StringComparison.OrdinalIgnoreCase);
-            var amountCss = isIncome ? "income" : "expense";
-            var badgeCss = isIncome ? "badge-income" : "badge-expense";
-            var sign = isIncome ? "+" : "-";
-            var typeLabel = isIncome ? "Income" : "Expense";
-            var description = string.IsNullOrWhiteSpace(tx.Description) ? "Transaction" : tx.Description;
-            var category = string.IsNullOrWhiteSpace(tx.Category) ? "General" : tx.Category;
-
             <div class="table-row">
-                <div class="muted">@tx.Date.ToString("MMM dd")</div>
-                <div class="strong">@description</div>
-                <div><span class="pill">@category</span></div>
-                <div><span class="badge @badgeCss">@typeLabel</span></div>
-                <div class="amount @amountCss" style="text-align:right;">@sign @tx.Amount.ToString("C")</div>
+                <div class="muted">-</div>
+                <div class="strong">No transactions found</div>
+                <div><span class="pill">-</span></div>
+                <div><span class="badge">-</span></div>
+                <div style="text-align:right;" class="muted">-</div>
             </div>
+        }
+        else
+        {
+            @foreach (var tx in FilteredTransactions)
+            {
+                var isIncome = string.Equals(tx.Type, "income", StringComparison.OrdinalIgnoreCase);
+                var amountCss = isIncome ? "income" : "expense";
+                var badgeCss = isIncome ? "badge-income" : "badge-expense";
+                var sign = isIncome ? "+" : "-";
+                var typeLabel = isIncome ? "Income" : "Expense";
+                var description = string.IsNullOrWhiteSpace(tx.Description) ? "Transaction" : tx.Description;
+                var category = string.IsNullOrWhiteSpace(tx.Category) ? "General" : tx.Category;
+
+                <div class="table-row">
+                    <div class="muted">@tx.Date.ToString("MMM dd")</div>
+                    <div class="strong">@description</div>
+                    <div><span class="pill">@category</span></div>
+                    <div><span class="badge @badgeCss">@typeLabel</span></div>
+                    <div class="amount @amountCss" style="text-align:right;">@sign @tx.Amount.ToString("C")</div>
+                </div>
+            }
         }
     </div>
 
 </div>
 
-<!-- ADD TRANSACTION MODAL -->
 <Modal @bind-IsOpen="isModalOpen"
        Title="Add Transaction"
        Subtitle="Create a new income or expense transaction.">
     <ChildContent>
+        @if (!string.IsNullOrWhiteSpace(formError))
+        {
+            <div class="alert">@formError</div>
+        }
+
         <div class="form-grid">
             <div class="field">
                 <label>Amount (USD)</label>
-                <input class="input" type="number" placeholder="e.g. 25.50" @bind="newTx.Amount" />
+                <input class="input" type="number" step="0.01" placeholder="e.g. 25.50" @bind="newTx.Amount" />
             </div>
             <div class="field">
                 <label>Type</label>
                 <select class="input" @bind="newTx.Type">
-                    <option value="Expense">Expense</option>
-                    <option value="Income">Income</option>
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
                 </select>
+            </div>
+            <div class="field">
+                <label>Category</label>
+                <input class="input" placeholder="e.g. Food, Salary, Transport" @bind="newTx.Category" />
+            </div>
+            <div class="field">
+                <label>Description</label>
+                <input class="input" placeholder="e.g. Groceries, Taxi, Freelance" @bind="newTx.Description" />
             </div>
             <div class="field">
                 <label>Date</label>
@@ -95,27 +124,97 @@
 
 @code {
     private bool isModalOpen = false;
+    private string currentUserId = "demo-user";
+    private string formError = "";
+    private string searchTerm = "";
+    private string selectedType = "";
+    private string selectedCategory = "";
     private Transaction newTx = new();
-    private List<Transaction> transactions = new()
+    private List<Transaction> transactions = new();
+
+    private IEnumerable<string> CategoryOptions =>
+        transactions
+            .Select(t => t.Category)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Select(c => c.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c);
+
+    private IEnumerable<Transaction> FilteredTransactions =>
+        transactions
+            .Where(FilterSearch)
+            .Where(FilterType)
+            .Where(FilterCategory)
+            .OrderByDescending(t => t.Date);
+
+    protected override async Task OnInitializedAsync()
     {
-        new Transaction { Amount = 2500, Category="Salary", Type="income", Date=DateTime.Today, Description="January salary" },
-        new Transaction { Amount = 150, Category="Transport", Type="expense", Date=DateTime.Today.AddDays(-1), Description="Taxi" }
-    };
+        currentUserId = await AuthService.GetCurrentUserIdAsync();
+        transactions = await TransactionsStore.GetTransactionsAsync(currentUserId);
+        ResetNewTransaction();
+    }
 
     private void OpenModal()
     {
+        formError = "";
         isModalOpen = true;
     }
 
-    private void CloseModal()
+    private async Task SaveTransaction()
     {
+        formError = "";
+
+        if (newTx.Amount <= 0)
+        {
+            formError = "Amount must be greater than 0.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newTx.Description))
+        {
+            formError = "Please provide a description.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(currentUserId))
+            currentUserId = await AuthService.GetCurrentUserIdAsync();
+
+        newTx.UserId = currentUserId;
+        newTx.Type = string.Equals(newTx.Type, "income", StringComparison.OrdinalIgnoreCase) ? "income" : "expense";
+
+        await TransactionsStore.AddTransactionAsync(currentUserId, newTx);
+        transactions = await TransactionsStore.GetTransactionsAsync(currentUserId);
+
+        ResetNewTransaction();
         isModalOpen = false;
     }
 
-    private void SaveTransaction()
+    private void ResetNewTransaction()
     {
-        transactions.Insert(0, newTx);
-        newTx = new Transaction();
-        isModalOpen = false;
+        newTx = new Transaction
+        {
+            Type = "expense",
+            Date = DateTime.Today
+        };
+    }
+
+    private bool FilterSearch(Transaction tx)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm)) return true;
+        var q = searchTerm.Trim();
+        return tx.Description.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+               tx.Category.Contains(q, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool FilterType(Transaction tx)
+    {
+        if (string.IsNullOrWhiteSpace(selectedType)) return true;
+        return string.Equals(tx.Type, selectedType, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool FilterCategory(Transaction tx)
+    {
+        if (string.IsNullOrWhiteSpace(selectedCategory)) return true;
+        return string.Equals(tx.Category, selectedCategory, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -1,9 +1,10 @@
 @using Microsoft.AspNetCore.Components
+@rendermode InteractiveServer
 
 @if (IsOpen)
 {
     <div class="modal-overlay" @onclick="OnOverlayClick">
-        <div class="modal glass" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+        <div class="app-modal glass" role="dialog" aria-modal="true" @onclick="SwallowClick" @onclick:stopPropagation="true">
             <div class="modal-head">
                 <div>
                     <div class="modal-title">@Title</div>
@@ -50,5 +51,10 @@
     private async Task OnOverlayClick()
     {
         await Close();
+    }
+
+    private void SwallowClick()
+    {
+        // Prevent overlay close when clicking inside modal content.
     }
 }

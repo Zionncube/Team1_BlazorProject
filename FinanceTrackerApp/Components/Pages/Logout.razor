@@ -7,9 +7,9 @@
 <p>Logging out...</p>
 
 @code {
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        Auth.Logout();
+        await Auth.LogoutAsync();
         Nav.NavigateTo("/login", true);
     }
 }

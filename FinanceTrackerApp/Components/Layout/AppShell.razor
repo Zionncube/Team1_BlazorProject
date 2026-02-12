@@ -43,6 +43,17 @@
                 Analytics
             </NavLink>
 
+            <NavLink class="nav-link" href="/goals">
+                <span class="nav-icon">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11Z"
+                              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        <circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.8"/>
+                    </svg>
+                </span>
+                Goals
+            </NavLink>
+
             <NavLink class="nav-link" href="/categories">
                 <span class="nav-icon">
                     <svg class="icon" viewBox="0 0 24 24" fill="none">
@@ -67,8 +78,8 @@
         </nav>
 
         <div class="sidebar-footer">
-            <button class="btn btn-primary" style="width: 100%;">+ Add Transaction</button>
-            <button class="btn" style="width: 100%; margin-top: .6rem;">Logout</button>
+            <NavLink class="btn btn-primary" href="/transactions" style="width: 100%; display: inline-block; text-align: center;">+ Add Transaction</NavLink>
+            <NavLink class="btn" href="/logout" style="width: 100%; margin-top: .6rem; display: inline-block; text-align: center;">Logout</NavLink>
         </div>
     </aside>
 
