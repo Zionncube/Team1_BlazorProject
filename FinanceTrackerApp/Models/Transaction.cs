@@ -1,7 +1,11 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+
 namespace FinanceTrackerApp.Models;
 
 public class Transaction
 {
+    [Key]
     public Guid TransactionId { get; set; } = Guid.NewGuid();
     public string UserId { get; set; } = "demo-user"; // temporary for UI stage
     public decimal Amount { get; set; }

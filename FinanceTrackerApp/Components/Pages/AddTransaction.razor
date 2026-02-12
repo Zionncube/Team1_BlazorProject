@@ -1,0 +1,61 @@
+@page "/add-transaction"
+@using FinanceTrackerApp.Models
+@using FinanceTrackerApp.Services
+@inject TransactionService TransactionService
+@inject NavigationManager NavigationManager
+
+<div class="glass card" style="padding:1rem; max-width:500px; margin:auto;">
+    <h2>Add Transaction</h2>
+
+    <div class="form-grid" style="display:grid; gap:.5rem;">
+        <div class="field">
+            <label>Amount (USD)</label>
+            <input class="input" type="number" @bind="newTx.Amount" />
+        </div>
+
+        <div class="field">
+            <label>Type</label>
+            <select class="input" @bind="newTx.Type">
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label>Date</label>
+            <input type="date" class="input" @bind="newTx.Date" />
+        </div>
+
+        <div class="field">
+            <label>Category</label>
+            <input class="input" type="text" @bind="newTx.Category" placeholder="e.g. Food" />
+        </div>
+
+        <div class="field">
+            <label>Description</label>
+            <input class="input" type="text" @bind="newTx.Description" placeholder="Optional description" />
+        </div>
+
+        <div style="margin-top:1rem;">
+            <button class="btn btn-primary" @onclick="SaveTransaction">Save</button>
+            <button class="btn btn-ghost" @onclick="Cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Transaction newTx = new Transaction { Date = DateTime.Today, Type = "expense" };
+
+    private async Task SaveTransaction()
+    {
+        Console.WriteLine("Adding transaction...");
+        await TransactionService.AddAsync(newTx);
+        Console.WriteLine("Navigating back to /transactions");
+        NavigationManager.NavigateTo("/transactions");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/transactions");
+    }
+}

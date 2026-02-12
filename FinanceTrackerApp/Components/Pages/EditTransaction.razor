@@ -1,0 +1,74 @@
+@page "/edit-transaction/{TransactionId:guid}"
+@using FinanceTrackerApp.Models
+@using FinanceTrackerApp.Services
+@inject TransactionService TransactionService
+@inject NavigationManager NavigationManager
+
+<div class="glass card" style="padding:1rem; max-width:500px; margin:auto;">
+    <h2>Edit Transaction</h2>
+
+    @if (editTx == null)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        <div class="form-grid" style="display:grid; gap:.5rem;">
+            <div class="field">
+                <label>Amount (USD)</label>
+                <input class="input" type="number" @bind="editTx.Amount" />
+            </div>
+
+            <div class="field">
+                <label>Type</label>
+                <select class="input" @bind="editTx.Type">
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Date</label>
+                <input type="date" class="input" @bind="editTx.Date" />
+            </div>
+
+            <div class="field">
+                <label>Category</label>
+                <input class="input" type="text" @bind="editTx.Category" />
+            </div>
+
+            <div class="field">
+                <label>Description</label>
+                <input class="input" type="text" @bind="editTx.Description" />
+            </div>
+
+            <div style="margin-top:1rem;">
+                <button class="btn btn-primary" @onclick="SaveTransaction">Save</button>
+                <button class="btn btn-ghost" @onclick="Cancel">Cancel</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid TransactionId { get; set; }
+    private Transaction? editTx;
+
+    protected override async Task OnInitializedAsync()
+    {
+        editTx = await TransactionService.GetByIdAsync(TransactionId);
+    }
+
+    private async Task SaveTransaction()
+    {
+        if (editTx == null) return;
+
+        await TransactionService.UpdateAsync(editTx);
+        NavigationManager.NavigateTo("/transactions");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/transactions");
+    }
+}

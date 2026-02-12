@@ -1,0 +1,123 @@
+is_global = true
+build_property.TargetFramework = net9.0
+build_property.TargetFramework = net9.0
+build_property.TargetPlatformMinVersion = 
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v9.0
+build_property.RootNamespace = FinanceTrackerApp
+build_property.RootNamespace = FinanceTrackerApp
+build_property.ProjectDir = C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 9.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = C:\Users\jacob\School\2026\Term 1\CSE325 - .NET Software Development\Team1_BlazorProject\FinanceTrackerApp
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 9.0
+build_property.EnableCodeStyleSeverity = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/App.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBcHAucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Layout/AppShell.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcQXBwU2hlbGwucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/AddTransaction.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZGRUcmFuc2FjdGlvbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Analytics.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBbmFseXRpY3MucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Categories.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRlZ29yaWVzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Counter.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb3VudGVyLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/EditTransaction.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFZGl0VHJhbnNhY3Rpb24ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Error.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFcnJvci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Goals.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xHb2Fscy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Home.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Login.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xMb2dpbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Logout.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xMb2dvdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/NotFound.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xOb3RGb3VuZC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Register.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xSZWdpc3Rlci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Settings.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTZXR0aW5ncy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Transactions.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUcmFuc2FjdGlvbnMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Pages/Weather.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xXZWF0aGVyLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Routes.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSb3V0ZXMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Shared/Modal.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcTW9kYWwucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/_Imports.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xfSW1wb3J0cy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Layout/MainLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcTWFpbkxheW91dC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-zq2grpd9wn
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Layout/NavMenu.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcTmF2TWVudS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-snzhjf16md
+
+[C:/Users/jacob/School/2026/Term 1/CSE325 - .NET Software Development/Team1_BlazorProject/FinanceTrackerApp/Components/Layout/ReconnectModal.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcUmVjb25uZWN0TW9kYWwucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-wq720j1nz0
