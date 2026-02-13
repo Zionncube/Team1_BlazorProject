@@ -1,10 +1,12 @@
 using FinanceTrackerApp.Components;
-using FinanceTrackerApp.Services;
 using ApexCharts;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.Extensions.Options;
+using FinanceTrackerApp.Data;
+using FinanceTrackerApp.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +24,11 @@ builder.Services.AddScoped<ProtectedLocalStorage>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuthenticationStateProvider, FirebaseAuthStateProvider>();
 builder.Services.AddApexCharts();
-builder.Services.AddSingleton<ITransactionsStore, InMemoryTransactionsStore>();
+
+builder.Services.AddDbContext<FinanceDbContext>(options =>
+    options.UseSqlite("Data Source=FinanceTracker.db"));
+builder.Services.AddScoped<TransactionService>();
+
 builder.Services.Configure<FirebaseOptions>(builder.Configuration.GetSection("Firebase"));
 builder.Services.AddHttpClient("firebase");
 builder.Services.AddSingleton<IGoalsStore>(sp =>
