@@ -1,5 +1,6 @@
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Routing
+@inject FinanceTrackerApp.Services.ThemeService ThemeService
 
 <div class="app-shell">
 
@@ -98,6 +99,9 @@
             </div>
 
             <div class="header-right">
+                <button class="icon-btn" @onclick="ToggleThemeAsync" title="@(ThemeService.IsDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")" aria-label="@(ThemeService.IsDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")">
+                    <span>@(ThemeService.IsDarkMode ? "🌙" : "☀️")</span>
+                </button>
                 <div class="profile-chip glass">
                     <div class="avatar">H</div>
                     <div>
@@ -119,6 +123,21 @@
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private bool sidebarOpen = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ThemeService.InitializeAsync();
+            ThemeService.OnThemeChanged += StateHasChanged;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleThemeAsync()
+    {
+        await ThemeService.ToggleThemeAsync();
+    }
 
     private void ToggleSidebar() => sidebarOpen = !sidebarOpen;
 

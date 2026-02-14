@@ -3,6 +3,7 @@ using ApexCharts;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.Components.Server;
 using Microsoft.Extensions.Options;
 using FinanceTrackerApp.Data;
 using FinanceTrackerApp.Services;
@@ -13,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.Configure<CircuitOptions>(options => options.DetailedErrors = true);
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -28,6 +30,11 @@ builder.Services.AddApexCharts();
 builder.Services.AddDbContext<FinanceDbContext>(options =>
     options.UseSqlite("Data Source=FinanceTracker.db"));
 builder.Services.AddScoped<TransactionService>();
+builder.Services.AddScoped<BudgetService>();
+builder.Services.AddScoped<BudgetCalculationService>();
+builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<ToastService>();
+builder.Services.AddScoped<ThemeService>();
 
 builder.Services.Configure<FirebaseOptions>(builder.Configuration.GetSection("Firebase"));
 builder.Services.AddHttpClient("firebase");

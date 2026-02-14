@@ -1,0 +1,160 @@
+@using FinanceTrackerApp.Services
+
+<div class="budget-card @(IsOverspent ? "overspent" : "")">
+    <div class="budget-header">
+        <div class="budget-category">
+            <div class="category-color" style="background-color: @CategoryColor;"></div>
+            <div class="category-info">
+                <div class="category-name">@CategoryName</div>
+                <div class="category-limit">Budget: @BudgetLimit.ToString("C0")</div>
+            </div>
+        </div>
+        @if (IsOverspent)
+        {
+            <div class="budget-alert-badge">
+                <span class="badge-text">Over by @OverspentAmount.ToString("C0")</span>
+            </div>
+        }
+    </div>
+
+    <div class="budget-progress">
+        <BudgetProgressBar BudgetLimit="@BudgetLimit" CurrentSpending="@CurrentSpending" />
+    </div>
+
+    <div class="budget-footer">
+        <div class="budget-stat">
+            <span class="stat-label">Spent</span>
+            <span class="stat-value">@CurrentSpending.ToString("C0")</span>
+        </div>
+        <div class="budget-stat">
+            <span class="stat-label">Remaining</span>
+            <span class="stat-value @(Remaining < 0 ? "negative" : "")">@Remaining.ToString("C0")</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Guid BudgetId { get; set; }
+
+    [Parameter]
+    public string CategoryName { get; set; } = "General";
+
+    [Parameter]
+    public string CategoryColor { get; set; } = "#2BEF83";
+
+    [Parameter]
+    public decimal BudgetLimit { get; set; }
+
+    [Parameter]
+    public decimal CurrentSpending { get; set; }
+
+    private decimal Remaining => BudgetLimit - CurrentSpending;
+    private bool IsOverspent => CurrentSpending > BudgetLimit;
+    private decimal OverspentAmount => IsOverspent ? CurrentSpending - BudgetLimit : 0;
+}
+
+<style>
+    .budget-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 1.5rem;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    .budget-card:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .budget-card.overspent {
+        border-color: rgba(230, 57, 70, 0.4);
+        background: linear-gradient(135deg, rgba(230, 57, 70, 0.05) 0%, rgba(230, 57, 70, 0.02) 100%);
+    }
+
+    .budget-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        gap: 1rem;
+    }
+
+    .budget-category {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+    }
+
+    .category-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .category-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .category-name {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .category-limit {
+        font-size: 0.85rem;
+        color: var(--text-muted, #999);
+    }
+
+    .budget-alert-badge {
+        background: linear-gradient(135deg, #E63946 0%, #D62828 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .badge-text {
+        white-space: nowrap;
+    }
+
+    .budget-progress {
+        margin-bottom: 1rem;
+    }
+
+    .budget-footer {
+        display: flex;
+        justify-content: space-around;
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .budget-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-muted, #999);
+    }
+
+    .stat-value {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .stat-value.negative {
+        color: #E63946;
+    }
+</style>

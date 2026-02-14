@@ -1,0 +1,87 @@
+@if (PercentageUsed >= 0)
+{
+    <div class="budget-progress-container">
+        <div class="progress-bar-wrapper">
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" 
+                     style="width: @(Math.Min(PercentageUsed, 100))%; background-color: @GetProgressColor();">
+                </div>
+            </div>
+        </div>
+        <div class="progress-info">
+            <span class="progress-percentage">@(Math.Round(PercentageUsed, 0))%</span>
+            <span class="progress-amount">@CurrentSpending.ToString("C0") / @BudgetLimit.ToString("C0")</span>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public decimal BudgetLimit { get; set; }
+
+    [Parameter]
+    public decimal CurrentSpending { get; set; }
+
+    private double PercentageUsed => BudgetLimit > 0 ? (double)(CurrentSpending / BudgetLimit * 100) : 0;
+
+    private string GetProgressColor()
+    {
+        if (PercentageUsed < 75)
+            return "#2BEF83"; // Green
+        if (PercentageUsed < 100)
+            return "#FFB81C"; // Yellow
+        return "#E63946"; // Red
+    }
+}
+
+<style>
+    .budget-progress-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .progress-bar-wrapper {
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .progress-bar-bg {
+        width: 100%;
+        height: 8px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s ease, background-color 0.3s ease;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .progress-info {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        min-width: 150px;
+        justify-content: flex-end;
+    }
+
+    .progress-percentage {
+        font-weight: 600;
+        font-size: 0.9rem;
+        min-width: 35px;
+        text-align: right;
+    }
+
+    .progress-amount {
+        font-size: 0.85rem;
+        color: var(--text-muted, #999);
+        min-width: 100px;
+        text-align: right;
+    }
+</style>
