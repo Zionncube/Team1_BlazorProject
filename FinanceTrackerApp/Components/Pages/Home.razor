@@ -1,26 +1,45 @@
 @page "/"
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using FinanceTrackerApp.Services
+@using FinanceTrackerApp.Models
 @attribute [Authorize]
+@inject ProtectedLocalStorage Storage
+@inject IGoalsStore GoalsStore
+@inject AuthService AuthService
 
 <div class="glass card">
     <h2>Dashboard</h2>
-    <p>Your money overview. Clean. Private. Powerful.</p>
 
     <div class="kpis">
         <div class="glass kpi">
             <div class="label">Total Balance</div>
-            <div class="value positive">$ 12,540</div>
+            <div class="value positive">@CurrencySymbol 12,540</div>
         </div>
 
         <div class="glass kpi">
             <div class="label">Monthly Income</div>
-            <div class="value income">$ 4,850</div>
+            <div class="value income">@CurrencySymbol 4,850</div>
         </div>
 
         <div class="glass kpi">
             <div class="label">Monthly Expenses</div>
-            <div class="value negative">$ 1,920</div>
+            <div class="value negative">@CurrencySymbol 1,920</div>
         </div>
     </div>
+
+    @if (ShowGoals && FeaturedGoal != null)
+    {
+        <div style="margin-top: 1.1rem;">
+            <h2 style="margin-bottom: .6rem;">Savings Goals</h2>
+            <div class="glass card" style="background: rgba(255,255,255,0.05); padding: 1rem;">
+                <div class="tx-title">@FeaturedGoal.Title</div>
+                <div class="progress-bar" style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; margin: 8px 0;">
+                    <div style="background: var(--primary); width: @(GetProgress(FeaturedGoal))%; height: 100%; border-radius: 4px;"></div>
+                </div>
+                <div class="tx-sub">@(GetProgress(FeaturedGoal))% of @CurrencySymbol @FeaturedGoal.TargetAmount saved</div>
+            </div>
+        </div>
+    }
 
     <div style="margin-top: 1.1rem;">
         <h2 style="margin-bottom: .6rem;">Recent Transactions</h2>
@@ -33,7 +52,7 @@
                     <div class="tx-sub">Food • Today</div>
                 </div>
             </div>
-            <div class="amount expense">- $ 28.40</div>
+            <div class="amount expense">- @CurrencySymbol 28.40</div>
         </div>
 
         <div class="tx">
@@ -44,7 +63,7 @@
                     <div class="tx-sub">Taxi • Yesterday</div>
                 </div>
             </div>
-            <div class="amount expense">- $ 12.00</div>
+            <div class="amount expense">- @CurrencySymbol 12.00</div>
         </div>
 
         <div class="tx">
@@ -55,7 +74,43 @@
                     <div class="tx-sub">Income • Jan 25</div>
                 </div>
             </div>
-            <div class="amount income">+ $ 1,200.00</div>
+            <div class="amount income">+ @CurrencySymbol 1,200.00</div>
         </div>
     </div>
 </div>
+
+@code {
+    private bool ShowGoals = true;
+    private string CurrencySymbol = "$";
+    private SavingsGoal? FeaturedGoal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var goalsReq = await Storage.GetAsync<bool>("pref_show_goals");
+        ShowGoals = goalsReq.Success ? goalsReq.Value : true;
+
+        var currencyReq = await Storage.GetAsync<string>("pref_currency");
+        if (currencyReq.Success && !string.IsNullOrEmpty(currencyReq.Value))
+        {
+            CurrencySymbol = currencyReq.Value switch
+            {
+                "NGN" => "₦",
+                "EUR" => "€",
+                _ => "$"
+            };
+        }
+
+        var session = await AuthService.GetSessionAsync();
+        if (session != null && !string.IsNullOrEmpty(session.LocalId))
+        {
+            var goals = await GoalsStore.GetGoalsAsync(session.LocalId);
+            FeaturedGoal = goals.FirstOrDefault();
+        }
+    }
+
+    private int GetProgress(SavingsGoal goal)
+    {
+        if (goal.TargetAmount <= 0) return 0;
+        return (int)((goal.CurrentAmount / goal.TargetAmount) * 100);
+    }
+}

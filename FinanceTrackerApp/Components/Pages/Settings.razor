@@ -1,7 +1,127 @@
 @page "/settings"
+@using FinanceTrackerApp.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @attribute [Authorize]
+@inject AuthService AuthService
+@inject ProtectedLocalStorage Storage
+@inject NavigationManager Nav
 
-<div class="glass card">
-    <h2>Settings</h2>
-    <p>Account preferences, privacy settings, and theme controls will go here.</p>
+<div class="page">
+    <div class="page-header glass">
+        <h1 class="header-title">Settings</h1>
+        <p class="header-sub">Manage your account and application preferences</p>
+    </div>
+
+    <div class="grid">
+        <div class="glass card">
+            <h2>Account</h2>
+            <div class="profile-chip" style="margin-top: 1rem; border: none; background: rgba(255,255,255,0.03);">
+                <div class="avatar">@UserEmail?.Substring(0, 1).ToUpper()</div>
+                <div>
+                    <div class="profile-name">@UserEmail</div>
+                    <div class="profile-sub">Member since @JoinDate</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <button class="btn btn-danger" @onclick="HandleLogout">
+                    Logout Account
+                </button>
+            </div>
+        </div>
+
+        <div class="glass card">
+            <h2>Preferences</h2>
+
+            <div class="field" style="margin-top: 1.5rem;">
+                <label>Primary Currency</label>
+                <select class="input" @bind="SelectedCurrency">
+                    <option value="USD">USD ($)</option>
+                    <option value="NGN">NGN (₦)</option>
+                    <option value="EUR">EUR (€)</option>
+                </select>
+            </div>
+
+            <div class="field" style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <label>Show Goals on Dashboard</label>
+                <input type="checkbox" @bind="ShowGoals" />
+            </div>
+
+            <div class="field" style="margin-top: 1rem;">
+                <label>Monthly Spending Alert (Warning Limit)</label>
+                <input type="number" class="input" @bind="BudgetLimit" placeholder="e.g. 500" />
+            </div>
+
+            <button class="btn btn-primary" style="margin-top: 1.5rem; width: 100%;" @onclick="SavePreferences">
+                @SaveStatus
+            </button>
+        </div>
+
+        <div class="glass card">
+            <h2>System</h2>
+            <p class="muted">Clear cached session data if you are experiencing UI sync issues.</p>
+            <button class="btn btn-ghost" style="margin-top: 1rem; width: 100%;" @onclick="ClearCache">
+                Reset Local Cache
+            </button>
+        </div>
+    </div>
 </div>
+
+@code {
+    private string? UserEmail;
+    private string DisplayName = "User"; // Default
+    private string JoinDate = DateTime.Now.ToString("MMMM yyyy");
+    private string SaveStatus = "Save Settings";
+
+    private string SelectedCurrency = "USD";
+    private bool ShowGoals = true;
+    private decimal BudgetLimit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AuthService.GetSessionAsync();
+        if (session != null)
+        {
+            UserEmail = session.Email;
+            // Sync logic for the name "Happiness"
+            DisplayName = UserEmail == "happiness@demo.com" ? "Happiness" : UserEmail.Split('@')[0];
+        }
+
+        var currencyReq = await Storage.GetAsync<string>("pref_currency");
+        if (currencyReq.Success) SelectedCurrency = currencyReq.Value ?? "USD";
+
+        var goalsReq = await Storage.GetAsync<bool>("pref_show_goals");
+        if (goalsReq.Success) ShowGoals = goalsReq.Value;
+
+        var budgetReq = await Storage.GetAsync<decimal>("pref_budget_limit");
+        if (budgetReq.Success) BudgetLimit = budgetReq.Value;
+    }
+
+    private async Task SavePreferences()
+    {
+        SaveStatus = "Saving...";
+        await Storage.SetAsync("pref_currency", SelectedCurrency);
+        await Storage.SetAsync("pref_show_goals", ShowGoals);
+        await Storage.SetAsync("pref_budget_limit", BudgetLimit);
+
+        await Task.Delay(500);
+        SaveStatus = "Saved!";
+        StateHasChanged();
+
+        await Task.Delay(2000);
+        SaveStatus = "Save Settings";
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        Nav.NavigateTo("/login");
+    }
+
+    private async Task ClearCache()
+    {
+        await Storage.DeleteAsync("firebase_auth_session");
+        Nav.NavigateTo("/login", forceLoad: true);
+    }
+}
