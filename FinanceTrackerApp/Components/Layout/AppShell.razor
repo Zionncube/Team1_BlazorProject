@@ -99,9 +99,9 @@
 
             <div class="header-right">
                 <div class="profile-chip glass">
-                    <div class="avatar">H</div>
+                    <div class="avatar">@AvatarLetter</div>
                     <div>
-                        <div class="profile-name">Happiness</div>
+                        <div class="profile-name">@DisplayName</div>
                         <div class="profile-sub">Personal Account</div>
                     </div>
                 </div>
@@ -115,12 +115,27 @@
 
 </div>
 
+@inject FinanceTrackerApp.Services.AuthService AuthService
+
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
-
     private bool sidebarOpen = false;
+    private string DisplayName = "User";
+    private char AvatarLetter => DisplayName.Length > 0 ? DisplayName[0] : 'U';
 
     private void ToggleSidebar() => sidebarOpen = !sidebarOpen;
-
     private void CloseSidebar() => sidebarOpen = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AuthService.GetSessionAsync();
+        if (session?.Email == "happiness@demo.com")
+        {
+            DisplayName = "Happiness";
+        }
+        else if (!string.IsNullOrEmpty(session?.Email))
+        {
+            DisplayName = session.Email.Split('@')[0];
+        }
+    }
 }
