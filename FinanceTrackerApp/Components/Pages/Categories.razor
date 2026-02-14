@@ -1,7 +1,333 @@
 @page "/categories"
-@attribute [Authorize]
+@using FinanceTrackerApp.Services
+@using FinanceTrackerApp.Models
+@inject CategoryService CategoryService
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
 
 <div class="glass card">
-    <h2>Categories</h2>
-    <p>Manage categories like Food, Transport, Rent, Savings, etc.</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div>
+            <h2>Categories</h2>
+            <p>Manage categories like Food, Transport, Rent, Savings, etc.</p>
+        </div>
+        <button class="btn btn-primary" @onclick="OpenAddModal" style="height: fit-content;">
+            + Add Category
+        </button>
+    </div>
+
+    <!-- Search and Filter -->
+    <div style="margin-bottom: 20px;">
+        <input type="text" 
+               class="form-control" 
+               placeholder="Search categories..." 
+               @bind="searchQuery" 
+               @oninput="OnSearchChanged"
+               style="max-width: 300px;" />
+    </div>
+
+    <!-- Categories Grid -->
+    @if (filteredCategories.Any())
+    {
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+            @foreach (var category in filteredCategories)
+            {
+                <div class="category-card" style="border-left: 5px solid @category.Color;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                                <div style="width: 30px; height: 30px; background-color: @category.Color; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"></div>
+                                <h4 style="margin: 0;">@category.Name</h4>
+                            </div>
+                            <p style="color: #888; font-size: 13px; margin: 0;">
+                                Created: @category.CreatedDate.ToString("MMM dd, yyyy")
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-icon" @onclick="() => OpenEditModal(category)" title="Edit">
+                                ✎
+                            </button>
+                            <button class="btn-icon btn-danger" @onclick="async () => await OpenDeleteConfirm(category)" title="Delete">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div style="text-align: center; padding: 40px; color: #888;">
+            <p>No categories found. Create one to get started!</p>
+        </div>
+    }
 </div>
+
+<!-- Add/Edit Modal -->
+<Modal @bind-IsOpen="isModalOpen"
+       Title="@modalTitle"
+       Subtitle="@(editingCategoryId == Guid.Empty ? "Create a new category." : "Update category details.")">
+    <ChildContent>
+        <div class="form-group mb-3">
+            <label>Category Name</label>
+            <input type="text" class="form-control" @bind="editingCategoryName" placeholder="e.g., Food, Transport, Rent" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label>Color</label>
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 10px;">
+                @foreach (var color in colorPresets)
+                {
+                    <button type="button" 
+                            class="color-preset @(editingCategoryColor == color ? "selected" : "")"
+                            style="background-color: @color; width: 40px; height: 40px; border: 2px solid @(editingCategoryColor == color ? "#333" : "transparent"); border-radius: 50%; cursor: pointer;"
+                            @onclick="() => editingCategoryColor = color">
+                    </button>
+                }
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="color" 
+                       class="form-control" 
+                       style="width: 80px; height: 40px; cursor: pointer;"
+                       @bind="editingCategoryColor" />
+                <span style="font-size: 12px; color: #888;">Custom color</span>
+            </div>
+            <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; gap: 10px;">
+                <div style="width: 30px; height: 30px; background-color: @editingCategoryColor; border-radius: 50%; border: 1px solid #ddd;"></div>
+                <span style="font-size: 12px;">Preview: @editingCategoryColor</span>
+            </div>
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+        <button class="btn btn-primary" @onclick="SaveCategory" disabled="@string.IsNullOrWhiteSpace(editingCategoryName)">
+            @(editingCategoryId == Guid.Empty ? "Create" : "Update") Category
+        </button>
+    </FooterContent>
+</Modal>
+
+<!-- Delete Confirmation Modal -->
+<Modal @bind-IsOpen="isDeleteConfirmOpen"
+       Title="Confirm Delete"
+       Subtitle="@($"Are you sure you want to delete {deleteConfirmCategory?.Name}?")">
+    <ChildContent>
+        @if (categoryInUse)
+        {
+            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px; margin: 15px 0; color: #856404;">
+                ⚠️ This category is currently in use by budgets. Deleting it may affect your data.
+            </div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+        <button class="btn btn-danger" @onclick="ConfirmDelete">Delete Category</button>
+    </FooterContent>
+</Modal>
+
+<style>
+    .category-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        padding: 16px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .category-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .btn-icon {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #666;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+        background: #f0f0f0;
+        color: #333;
+    }
+
+    .btn-icon.btn-danger:hover {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+
+    .color-preset {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .color-preset:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .color-preset.selected {
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.3), 0 0 0 5px rgba(255, 255, 255, 0.8);
+    }
+</style>
+
+@code {
+    private List<Category> categories = new();
+    private List<Category> filteredCategories = new();
+    private string currentUserId = string.Empty;
+    private string searchQuery = string.Empty;
+
+    private bool isModalOpen = false;
+    private bool isDeleteConfirmOpen = false;
+    private bool categoryInUse = false;
+    private string modalTitle = "Add Category";
+    private Guid editingCategoryId = Guid.Empty;
+    private string editingCategoryName = string.Empty;
+    private string editingCategoryColor = "#2BEF83";
+    private Category? deleteConfirmCategory = null;
+
+    private readonly List<string> colorPresets = new()
+    {
+        "#2BEF83", // Green
+        "#FF6B6B", // Red
+        "#4ECDC4", // Teal
+        "#FFB81C", // Orange
+        "#9D84B7", // Purple
+        "#E74C3C", // Dark Red
+        "#3498DB", // Blue
+        "#1ABC9C", // Turquoise
+        "#F39C12", // Dark Orange
+        "#E91E63", // Pink
+        "#00BCD4", // Cyan
+        "#9C27B0"  // Deep Purple
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            currentUserId = await AuthService.GetCurrentUserIdAsync();
+            if (string.IsNullOrWhiteSpace(currentUserId))
+                currentUserId = "demo-user"; // Fallback for testing
+        }
+        catch (Exception)
+        {
+            currentUserId = "demo-user"; // Fallback for testing
+        }
+        
+        await LoadCategories();
+    }
+
+    private async Task LoadCategories()
+    {
+        categories = await CategoryService.GetCategoriesAsync(currentUserId);
+        ApplySearch();
+    }
+
+    private void ApplySearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredCategories = categories;
+        }
+        else
+        {
+            filteredCategories = categories
+                .Where(c => c.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? string.Empty;
+        ApplySearch();
+        StateHasChanged();
+    }
+
+    private void OpenAddModal()
+    {
+        editingCategoryId = Guid.Empty;
+        editingCategoryName = string.Empty;
+        editingCategoryColor = "#2BEF83";
+        modalTitle = "Add Category";
+        isModalOpen = true;
+    }
+
+    private void OpenEditModal(Category category)
+    {
+        editingCategoryId = category.CategoryId;
+        editingCategoryName = category.Name;
+        editingCategoryColor = category.Color;
+        modalTitle = "Edit Category";
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+    }
+
+    private async Task SaveCategory()
+    {
+        if (string.IsNullOrWhiteSpace(editingCategoryName))
+            return;
+
+        try
+        {
+            if (editingCategoryId == Guid.Empty)
+            {
+                await CategoryService.CreateCategoryAsync(currentUserId, editingCategoryName, editingCategoryColor);
+            }
+            else
+            {
+                await CategoryService.UpdateCategoryAsync(editingCategoryId, currentUserId, editingCategoryName, editingCategoryColor);
+            }
+
+            CloseModal();
+            await LoadCategories();
+        }
+        catch (Exception)
+        {
+            // Handle error
+        }
+    }
+
+    private async Task OpenDeleteConfirm(Category category)
+    {
+        deleteConfirmCategory = category;
+        categoryInUse = await CategoryService.IsCategoryInUseAsync(category.CategoryId, currentUserId);
+        isDeleteConfirmOpen = true;
+    }
+
+    private void CancelDelete()
+    {
+        isDeleteConfirmOpen = false;
+        deleteConfirmCategory = null;
+    }
+
+
+
+    private async Task ConfirmDelete()
+    {
+        if (deleteConfirmCategory == null)
+            return;
+
+        try
+        {
+            await CategoryService.DeleteCategoryAsync(deleteConfirmCategory.CategoryId, currentUserId);
+            isDeleteConfirmOpen = false;
+            deleteConfirmCategory = null;
+            await LoadCategories();
+        }
+        catch (Exception)
+        {
+            // Handle error
+        }
+    }
+}
+

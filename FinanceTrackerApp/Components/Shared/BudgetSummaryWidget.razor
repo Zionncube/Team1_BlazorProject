@@ -1,0 +1,141 @@
+@using FinanceTrackerApp.Services
+
+<div class="budget-summary-widget glass">
+    <div class="widget-header">
+        <h3>Budget Overview</h3>
+        <span class="widget-month">@MonthYear</span>
+    </div>
+
+    <div class="widget-stats">
+        <div class="widget-stat">
+            <div class="stat-label">Total Budgeted</div>
+            <div class="stat-value">@Summary?.TotalBudgeted.ToString("C0")</div>
+        </div>
+        <div class="widget-stat">
+            <div class="stat-label">Total Spent</div>
+            <div class="stat-value accent">@Summary?.TotalSpent.ToString("C0")</div>
+        </div>
+        <div class="widget-stat">
+            <div class="stat-label">Remaining</div>
+            <div class="stat-value @(IsOverBudget ? "negative" : "positive")">
+                @Summary?.RemainingBudget.ToString("C0")
+            </div>
+        </div>
+    </div>
+
+    @if (Summary?.OverspendingCount > 0)
+    {
+        <div class="widget-alerts-badge">
+            <span class="badge-icon">⚠️</span>
+            <span>@Summary.OverspendingCount category @(Summary.OverspendingCount == 1 ? "is" : "are") over budget</span>
+        </div>
+    }
+
+    <button class="btn btn-sm btn-primary" @onclick="OnViewDetails">View Budgets →</button>
+</div>
+
+@code {
+    [Parameter]
+    public BudgetSummary? Summary { get; set; }
+
+    [Parameter]
+    public int Year { get; set; } = DateTime.Today.Year;
+
+    [Parameter]
+    public int Month { get; set; } = DateTime.Today.Month;
+
+    [Parameter]
+    public EventCallback OnViewDetails { get; set; }
+
+    private string MonthYear => new DateTime(Year, Month, 1).ToString("MMMM yyyy");
+    private bool IsOverBudget => Summary?.RemainingBudget < 0;
+
+    protected override void OnInitialized()
+    {
+        Summary ??= new BudgetSummary();
+    }
+}
+
+<style>
+    .budget-summary-widget {
+        border-radius: 12px;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(43, 239, 131, 0.1) 0%, rgba(43, 239, 131, 0.05) 100%);
+    }
+
+    .widget-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .widget-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    .widget-month {
+        font-size: 0.9rem;
+        color: var(--text-muted, #999);
+    }
+
+    .widget-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .widget-stat {
+        text-align: center;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-muted, #999);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary, #fff);
+    }
+
+    .stat-value.accent {
+        color: #FFB81C;
+    }
+
+    .stat-value.positive {
+        color: #2BEF83;
+    }
+
+    .stat-value.negative {
+        color: #E63946;
+    }
+
+    .widget-alerts-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(230, 57, 70, 0.1);
+        border-left: 3px solid #E63946;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .badge-icon {
+        font-size: 1.1rem;
+    }
+
+    .btn.btn-sm {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+</style>
