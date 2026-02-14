@@ -1,13 +1,6 @@
 @page "/"
 @attribute [Authorize]
 
-@using FinanceTrackerApp.Services
-@using FinanceTrackerApp.Components.Shared
-
-@inject BudgetCalculationService? BudgetCalculationService
-@inject AuthService AuthService
-@inject NavigationManager NavManager
-
 <div class="glass card">
     <h2>Dashboard</h2>
     <p>Your money overview. Clean. Private. Powerful.</p>
@@ -27,17 +20,6 @@
             <div class="label">Monthly Expenses</div>
             <div class="value negative">$ 1,920</div>
         </div>
-    </div>
-
-    <!-- Budget Summary Widget -->
-    <div style="margin-top: 1.5rem;">
-        @if (budgetSummary != null)
-        {
-            <BudgetSummaryWidget Summary="@budgetSummary" 
-                                 Year="@DateTime.Today.Year" 
-                                 Month="@DateTime.Today.Month"
-                                 OnViewDetails="@(() => NavManager.NavigateTo("/budget"))" />
-        }
     </div>
 
     <div style="margin-top: 1.1rem;">
@@ -77,20 +59,3 @@
         </div>
     </div>
 </div>
-
-@code {
-    private BudgetSummary? budgetSummary;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var userId = await AuthService.GetCurrentUserIdAsync();
-        if (!string.IsNullOrWhiteSpace(userId) && BudgetCalculationService != null)
-        {
-            budgetSummary = await BudgetCalculationService.GetBudgetSummaryAsync(
-                userId, 
-                DateTime.Today.Year, 
-                DateTime.Today.Month
-            );
-        }
-    }
-}

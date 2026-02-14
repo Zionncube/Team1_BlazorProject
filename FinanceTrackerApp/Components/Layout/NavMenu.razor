@@ -1,12 +1,10 @@
-﻿@inject FinanceTrackerApp.Services.ThemeService ThemeService
-
-<div class="top-row ps-3 navbar navbar-dark">
+﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">FinanceTrackerApp</a>
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" aria-label="Toggle navigation menu" />
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
@@ -35,19 +33,6 @@
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="budget">
-                <span class="bi bi-graph-up-nav-menu" aria-hidden="true"></span> Budget
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.5rem;">
-            <button class="nav-link btn-theme-toggle" @onclick="ToggleTheme" @onclick:stopPropagation="true">
-                <span class="bi" aria-hidden="true">@(ThemeService.IsDarkMode ? "🌙" : "☀️")</span> 
-                @(ThemeService.IsDarkMode ? "Dark Mode" : "Light Mode")
-            </button>
-        </div>
-
-        <div class="nav-item px-3">
             <NavLink class="nav-link" href="login">Login</NavLink>
         </div>
         <div class="nav-item px-3">
@@ -58,26 +43,4 @@
         </div>
     </nav>
 </div>
-
-@code {
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await ThemeService.InitializeAsync();
-            ThemeService.OnThemeChanged += StateHasChanged;
-            StateHasChanged();
-        }
-    }
-
-    private async Task ToggleTheme()
-    {
-        await ThemeService.ToggleThemeAsync();
-    }
-
-    public void Dispose()
-    {
-        ThemeService.OnThemeChanged -= StateHasChanged;
-    }
-}
 
