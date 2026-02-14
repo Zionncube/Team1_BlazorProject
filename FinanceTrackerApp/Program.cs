@@ -33,6 +33,8 @@ builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<BudgetService>();
 builder.Services.AddScoped<BudgetCalculationService>();
 builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<ToastService>();
+builder.Services.AddScoped<ThemeService>();
 
 builder.Services.Configure<FirebaseOptions>(builder.Configuration.GetSection("Firebase"));
 builder.Services.AddHttpClient("firebase");
