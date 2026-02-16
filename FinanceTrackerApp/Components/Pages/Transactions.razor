@@ -73,7 +73,7 @@
                 <div class="table-row">
                     <div class="muted">@tx.Date.ToString("MMM dd")</div>
                     <div class="strong">@tx.Description</div>
-                    <div><span class="pill">@tx.Category</span></div>
+                    <div><span class="pill" style="@GetCategoryPillStyle(tx.Category)">@tx.Category</span></div>
                     <div><span class="badge @badgeCss">@tx.Type</span></div>
                     <div class="amount @amountCss" style="text-align:right;">
                         @sign @tx.Amount.ToString("C")
@@ -167,11 +167,13 @@
     private Transaction newTx = new();
     private List<Transaction> transactions = new();
     private List<Category> userCategories = new();
+    private Dictionary<string, string> categoryColors = new(StringComparer.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
         currentUserId = await AuthService.GetCurrentUserIdAsync();
         userCategories = await CategoryService.GetByUserAsync(currentUserId);
+        categoryColors = userCategories.ToDictionary(c => c.Name, c => c.Color, StringComparer.OrdinalIgnoreCase);
         transactions = await TransactionService.GetTransactionsAsync(currentUserId);
         ResetNewTransaction();
     }
@@ -261,8 +263,9 @@
     }
 
     private IEnumerable<string> CategoryOptions =>
-        transactions
-            .Select(t => t.Category)
+        userCategories
+            .Select(c => c.Name)
+            .Concat(transactions.Select(t => t.Category))
             .Where(c => !string.IsNullOrWhiteSpace(c))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(c => c);
@@ -283,4 +286,13 @@
                 && (string.IsNullOrWhiteSpace(selectedType) || t.Type == selectedType)
                 && (string.IsNullOrWhiteSpace(selectedCategory) || t.Category == selectedCategory))
             .OrderByDescending(t => t.Date);
+
+    private string GetCategoryPillStyle(string? category)
+    {
+        if (!string.IsNullOrWhiteSpace(category) && categoryColors.TryGetValue(category, out var color) && !string.IsNullOrWhiteSpace(color))
+        {
+            return $"background:{color}; color:#111;";
+        }
+        return string.Empty;
+    }
 }

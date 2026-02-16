@@ -61,7 +61,7 @@
 
         if (!ok)
         {
-            error = "That email is already registered.";
+            error = Auth.LastError ?? "Registration failed.";
             return;
         }
 

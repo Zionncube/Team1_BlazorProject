@@ -4,6 +4,7 @@
 @using FinanceTrackerApp.Services
 @inject TransactionService TransactionService
 @inject AuthService AuthService
+@inject CategoryService CategoryService
 @inject NavigationManager NavigationManager
 
 <EditForm Model="@newTx" OnValidSubmit="SaveTransaction">
@@ -32,29 +33,20 @@
                 <input type="date" class="input" @bind="newTx.Date" />
             </div>
 
-            <!-- Conditional Categories -->
             <div class="field">
                 <label>Category</label>
-                @if (newTx.Type == "expense")
-                {
-                    <select class="input" @bind="newTx.Category">
-                        <option value="Food">Food</option>
-                        <option value="Bills">Bills</option>
-                        <option value="Health / Medical">Health / Medical</option>
-                        <option value="Personal">Personal</option>
-                        <option value="Entertainment">Entertainment</option>
-                        <option value="Housing / Rent">Housing / Rent</option>
-                        <option value="Transportation">Transportation</option>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <select class="input" @bind="newTx.Category" style="flex:1;">
+                        @foreach (var category in CategoryOptions)
+                        {
+                            <option value="@category">@category</option>
+                        }
                     </select>
-                }
-                else if (newTx.Type == "income")
+                    <button type="button" class="btn btn-xs" @onclick="OpenQuickAddCategory">+ New</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(categoryMessage))
                 {
-                    <select class="input" @bind="newTx.Category">
-                        <option value="Salary">Salary</option>
-                        <option value="Bonus">Bonus</option>
-                        <option value="Freelance">Freelance</option>
-                        <option value="Investment">Investment</option>
-                    </select>
+                    <small class="muted">@categoryMessage</small>
                 }
             </div>
 
@@ -71,6 +63,25 @@
     </div>
 </EditForm>
 
+<Modal @bind-IsOpen="isCategoryModalOpen" Title="Add Category">
+    <ChildContent>
+        <div class="form-grid">
+            <div class="field">
+                <label>Name</label>
+                <input class="input" @bind="newCategoryName" placeholder="e.g. Groceries" />
+            </div>
+            <div class="field">
+                <label>Color</label>
+                <input class="input" type="color" @bind="newCategoryColor" />
+            </div>
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn btn-ghost" @onclick="CloseQuickAddCategory">Cancel</button>
+        <button class="btn btn-primary" @onclick="SaveQuickCategoryAsync">Save Category</button>
+    </FooterContent>
+</Modal>
+
 @code {
     private Transaction newTx = new Transaction
     {
@@ -78,10 +89,20 @@
         Type = "expense"
     };
     private string _currentUserId = "";
+    private List<Category> userCategories = new();
+    private bool isCategoryModalOpen;
+    private string newCategoryName = "";
+    private string newCategoryColor = "#2BEF83";
+    private string categoryMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
         _currentUserId = await AuthService.GetCurrentUserIdAsync();
+        await LoadCategoriesAsync();
+        if (string.IsNullOrWhiteSpace(newTx.Category))
+        {
+            newTx.Category = CategoryOptions.FirstOrDefault() ?? "General";
+        }
     }
 
     private async Task SaveTransaction()
@@ -89,6 +110,54 @@
         newTx.UserId = _currentUserId;
         await TransactionService.AddAsync(newTx);
         NavigationManager.NavigateTo("/transactions");
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        userCategories = await CategoryService.GetByUserAsync(_currentUserId);
+    }
+
+    private IEnumerable<string> CategoryOptions =>
+        userCategories
+            .Select(c => c.Name)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .DefaultIfEmpty("General")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name);
+
+    private void OpenQuickAddCategory()
+    {
+        categoryMessage = "";
+        newCategoryName = "";
+        newCategoryColor = "#2BEF83";
+        isCategoryModalOpen = true;
+    }
+
+    private void CloseQuickAddCategory()
+    {
+        isCategoryModalOpen = false;
+    }
+
+    private async Task SaveQuickCategoryAsync()
+    {
+        var name = (newCategoryName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            categoryMessage = "Category name is required.";
+            return;
+        }
+
+        if (userCategories.Any(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            categoryMessage = "Category already exists.";
+            return;
+        }
+
+        await CategoryService.AddAsync(new Category { Name = name, Color = newCategoryColor }, _currentUserId);
+        await LoadCategoriesAsync();
+        newTx.Category = name;
+        categoryMessage = $"Added '{name}'.";
+        isCategoryModalOpen = false;
     }
 
     private void Cancel()

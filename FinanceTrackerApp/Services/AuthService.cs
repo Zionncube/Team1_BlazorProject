@@ -1,6 +1,7 @@
-using System.Net.Http.Json;
-using System.Text.Json.Serialization;
+using System.Security.Cryptography;
 using FinanceTrackerApp.Models;
+using FinanceTrackerApp.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.Extensions.Options;
 
@@ -12,47 +13,65 @@ namespace FinanceTrackerApp.Services
         private const string DemoEmail = "demo@finance.com";
         private const string DemoPassword = "1234";
 
-        private readonly IHttpClientFactory _httpFactory;
+        private readonly FinanceDbContext _db;
         private readonly ProtectedLocalStorage _storage;
         private readonly FirebaseOptions _options;
 
         private FirebaseAuthSession? _cachedSession;
+        public string? LastError { get; private set; }
 
         public event Action? SessionChanged;
 
         public AuthService(
-            IHttpClientFactory httpFactory,
+            FinanceDbContext db,
             ProtectedLocalStorage storage,
             IOptions<FirebaseOptions> options)
         {
-            _httpFactory = httpFactory;
+            _db = db;
             _storage = storage;
             _options = options.Value;
         }
 
         public async Task<bool> RegisterAsync(AppUser user)
         {
-            if (string.IsNullOrWhiteSpace(_options.ApiKey))
-                return false;
-
-            var url = $"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={_options.ApiKey}";
-            var payload = new
+            LastError = null;
+            var email = NormalizeEmail(user.Email);
+            if (string.IsNullOrWhiteSpace(email))
             {
-                email = user.Email,
-                password = user.Password,
-                returnSecureToken = true
+                LastError = "Please enter a valid email.";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(user.Password) || user.Password.Length < 6)
+            {
+                LastError = "Password must be at least 6 characters.";
+                return false;
+            }
+
+            var exists = await _db.Users.AnyAsync(u => u.Email == email);
+            if (exists)
+            {
+                LastError = "This email is already registered.";
+                return false;
+            }
+
+            var newUser = new User
+            {
+                UserId = Guid.NewGuid().ToString(),
+                Email = email,
+                PasswordHash = HashPassword(user.Password),
+                CreatedAt = DateTime.UtcNow
             };
+            _db.Users.Add(newUser);
+            await _db.SaveChangesAsync();
 
-            var http = _httpFactory.CreateClient();
-            var response = await http.PostAsJsonAsync(url, payload);
-            if (!response.IsSuccessStatusCode)
-                return false;
-
-            var auth = await response.Content.ReadFromJsonAsync<FirebaseAuthResponse>();
-            if (auth is null)
-                return false;
-
-            var session = FirebaseAuthSession.FromAuthResponse(auth);
+            var session = new FirebaseAuthSession
+            {
+                IdToken = "local-session",
+                RefreshToken = "local-refresh",
+                LocalId = newUser.UserId,
+                Email = newUser.Email,
+                ExpiresAtUtc = DateTimeOffset.UtcNow.AddDays(30)
+            };
             await SaveSessionAsync(session);
             NotifySessionChanged();
             return true;
@@ -60,6 +79,7 @@ namespace FinanceTrackerApp.Services
 
         public async Task<bool> LoginAsync(string email, string password)
         {
+            LastError = null;
             if (_options.AllowDemoLogin && IsDemoCredentials(email, password))
             {
                 await SaveSessionAsync(CreateDemoSession());
@@ -67,27 +87,28 @@ namespace FinanceTrackerApp.Services
                 return true;
             }
 
-            if (string.IsNullOrWhiteSpace(_options.ApiKey))
-                return false;
-
-            var url = $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={_options.ApiKey}";
-            var payload = new
+            var normalizedEmail = NormalizeEmail(email);
+            if (string.IsNullOrWhiteSpace(normalizedEmail))
             {
-                email,
-                password,
-                returnSecureToken = true
+                LastError = "The email format is invalid.";
+                return false;
+            }
+
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+            if (user is null || !VerifyPassword(password, user.PasswordHash))
+            {
+                LastError = "Invalid email or password.";
+                return false;
+            }
+
+            var session = new FirebaseAuthSession
+            {
+                IdToken = "local-session",
+                RefreshToken = "local-refresh",
+                LocalId = user.UserId,
+                Email = user.Email,
+                ExpiresAtUtc = DateTimeOffset.UtcNow.AddDays(30)
             };
-
-            var http = _httpFactory.CreateClient();
-            var response = await http.PostAsJsonAsync(url, payload);
-            if (!response.IsSuccessStatusCode)
-                return false;
-
-            var auth = await response.Content.ReadFromJsonAsync<FirebaseAuthResponse>();
-            if (auth is null)
-                return false;
-
-            var session = FirebaseAuthSession.FromAuthResponse(auth);
             await SaveSessionAsync(session);
             NotifySessionChanged();
             return true;
@@ -110,7 +131,7 @@ namespace FinanceTrackerApp.Services
         public async Task<string> GetCurrentUserIdAsync()
         {
             var session = await GetSessionAsync();
-            return session?.LocalId ?? "demo-user";
+            return session?.LocalId ?? "";
         }
 
         public async Task<FirebaseAuthSession?> GetSessionAsync()
@@ -140,14 +161,8 @@ namespace FinanceTrackerApp.Services
             var session = stored.Value;
             if (session.ExpiresAtUtc <= DateTimeOffset.UtcNow.AddMinutes(1))
             {
-                var refreshed = await RefreshAsync(session.RefreshToken);
-                if (refreshed is null)
-                {
-                    await LogoutAsync();
-                    return null;
-                }
-                session = refreshed;
-                await SaveSessionAsync(session);
+                await LogoutAsync();
+                return null;
             }
 
             _cachedSession = session;
@@ -167,36 +182,44 @@ namespace FinanceTrackerApp.Services
             }
         }
 
-        private async Task<FirebaseAuthSession?> RefreshAsync(string refreshToken)
-        {
-            if (string.IsNullOrWhiteSpace(_options.ApiKey))
-                return null;
-
-            var url = $"https://securetoken.googleapis.com/v1/token?key={_options.ApiKey}";
-            var body = new Dictionary<string, string>
-            {
-                ["grant_type"] = "refresh_token",
-                ["refresh_token"] = refreshToken
-            };
-
-            var http = _httpFactory.CreateClient();
-            var response = await http.PostAsync(url, new FormUrlEncodedContent(body));
-            if (!response.IsSuccessStatusCode)
-                return null;
-
-            var refreshed = await response.Content.ReadFromJsonAsync<FirebaseRefreshResponse>();
-            if (refreshed is null)
-                return null;
-
-            return FirebaseAuthSession.FromRefreshResponse(refreshed);
-        }
-
         private void NotifySessionChanged() => SessionChanged?.Invoke();
 
         private static bool IsDemoCredentials(string email, string password)
         {
             return string.Equals(email?.Trim(), DemoEmail, StringComparison.OrdinalIgnoreCase) &&
                    password == DemoPassword;
+        }
+
+        private static string NormalizeEmail(string? email)
+        {
+            return (email ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private static string HashPassword(string password)
+        {
+            var salt = RandomNumberGenerator.GetBytes(16);
+            var hash = Rfc2898DeriveBytes.Pbkdf2(
+                password,
+                salt,
+                100000,
+                HashAlgorithmName.SHA256,
+                32);
+            return $"{Convert.ToBase64String(salt)}:{Convert.ToBase64String(hash)}";
+        }
+
+        private static bool VerifyPassword(string password, string storedHash)
+        {
+            var parts = storedHash.Split(':');
+            if (parts.Length != 2) return false;
+            var salt = Convert.FromBase64String(parts[0]);
+            var expected = Convert.FromBase64String(parts[1]);
+            var actual = Rfc2898DeriveBytes.Pbkdf2(
+                password,
+                salt,
+                100000,
+                HashAlgorithmName.SHA256,
+                32);
+            return CryptographicOperations.FixedTimeEquals(actual, expected);
         }
 
         private static FirebaseAuthSession CreateDemoSession()
@@ -219,64 +242,6 @@ namespace FinanceTrackerApp.Services
         public string LocalId { get; set; } = "";
         public string Email { get; set; } = "";
         public DateTimeOffset ExpiresAtUtc { get; set; } = DateTimeOffset.UtcNow;
-
-        public static FirebaseAuthSession FromAuthResponse(FirebaseAuthResponse response)
-        {
-            var expiresInSeconds = int.TryParse(response.ExpiresIn, out var s) ? s : 3600;
-            return new FirebaseAuthSession
-            {
-                IdToken = response.IdToken ?? "",
-                RefreshToken = response.RefreshToken ?? "",
-                LocalId = response.LocalId ?? "",
-                Email = response.Email ?? "",
-                ExpiresAtUtc = DateTimeOffset.UtcNow.AddSeconds(expiresInSeconds)
-            };
-        }
-
-        public static FirebaseAuthSession FromRefreshResponse(FirebaseRefreshResponse response)
-        {
-            var expiresInSeconds = int.TryParse(response.ExpiresIn, out var s) ? s : 3600;
-            return new FirebaseAuthSession
-            {
-                IdToken = response.IdToken ?? "",
-                RefreshToken = response.RefreshToken ?? "",
-                LocalId = response.UserId ?? "",
-                Email = "",
-                ExpiresAtUtc = DateTimeOffset.UtcNow.AddSeconds(expiresInSeconds)
-            };
-        }
     }
 
-    public class FirebaseAuthResponse
-    {
-        [JsonPropertyName("idToken")]
-        public string? IdToken { get; set; }
-
-        [JsonPropertyName("email")]
-        public string? Email { get; set; }
-
-        [JsonPropertyName("refreshToken")]
-        public string? RefreshToken { get; set; }
-
-        [JsonPropertyName("expiresIn")]
-        public string? ExpiresIn { get; set; }
-
-        [JsonPropertyName("localId")]
-        public string? LocalId { get; set; }
-    }
-
-    public class FirebaseRefreshResponse
-    {
-        [JsonPropertyName("id_token")]
-        public string? IdToken { get; set; }
-
-        [JsonPropertyName("refresh_token")]
-        public string? RefreshToken { get; set; }
-
-        [JsonPropertyName("expires_in")]
-        public string? ExpiresIn { get; set; }
-
-        [JsonPropertyName("user_id")]
-        public string? UserId { get; set; }
-    }
 }

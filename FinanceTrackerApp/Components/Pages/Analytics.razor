@@ -1,78 +1,322 @@
-@page "/analytics"
+﻿@page "/analytics"
 @attribute [Authorize]
+@rendermode InteractiveServer
 @using FinanceTrackerApp.Models
 @using FinanceTrackerApp.Services
+@using System.Text
 @inject TransactionService TransactionService
 @inject AuthService AuthService
+@inject IJSRuntime JS
 
-<div class="glass card">
-    <h2>Analytics</h2>
-    <p class="muted">Monthly totals and category breakdown from your local transaction data.</p>
+<section class="analytics-page">
+    <div class="glass card">
+        <div class="page-head">
+            <div>
+                <h2 style="margin:0;">Analytics</h2>
+                <p style="margin:.25rem 0 0 0;">Track spending patterns and cashflow performance.</p>
+            </div>
 
-    <div class="kpis" style="margin-top: .8rem;">
-        <div class="glass kpi">
-            <div class="label">This Month Income</div>
-            <div class="value income">@incomeThisMonth.ToString("C")</div>
+            <div class="analytics-controls" style="display:flex; gap:.6rem; align-items:center; flex-wrap: wrap;">
+                <select class="input analytics-select" @bind="selectedRange">
+                    <option value="30">Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="180">Last 6 months</option>
+                    <option value="365">Last 12 months</option>
+                </select>
+
+                <select class="input analytics-select" @bind="selectedDownloadType">
+                    <option value="csv">Download CSV Report</option>
+                    <option value="donutPng">Download Category Chart (PNG)</option>
+                    <option value="barPng">Download Monthly Chart (PNG)</option>
+                    <option value="allChartsPng">Download All Charts (PNG)</option>
+                </select>
+
+                <button class="btn btn-primary" @onclick="DownloadSelectedAsync">Download</button>
+            </div>
         </div>
-        <div class="glass kpi">
-            <div class="label">This Month Expenses</div>
-            <div class="value negative">@expensesThisMonth.ToString("C")</div>
-        </div>
-        <div class="glass kpi">
-            <div class="label">Net</div>
-            <div class="value @(netThisMonth >= 0 ? "positive" : "negative")">@netThisMonth.ToString("C")</div>
+
+        @if (!string.IsNullOrWhiteSpace(downloadStatus))
+        {
+            <p class="muted" style="margin-top:.6rem;">@downloadStatus</p>
+        }
+
+        <div class="analytics-kpis">
+            <div class="glass analytics-kpi">
+                <span class="label">Income</span>
+                <span class="value income">@TotalIncome.ToString("C")</span>
+            </div>
+            <div class="glass analytics-kpi">
+                <span class="label">Expenses</span>
+                <span class="value expense">@TotalExpense.ToString("C")</span>
+            </div>
+            <div class="glass analytics-kpi">
+                <span class="label">Net</span>
+                <span class="value @(Net >= 0 ? "income" : "expense")">@Net.ToString("C")</span>
+            </div>
+            <div class="glass analytics-kpi">
+                <span class="label">Savings Rate</span>
+                <span class="value">@SavingsRate.ToString("0.0")%</span>
+            </div>
         </div>
     </div>
 
-    <div class="table glass" style="margin-top: 1rem;">
-        <div class="table-row table-head">
-            <div>Category</div>
-            <div style="text-align:right;">Expenses</div>
-        </div>
-        @if (!expenseByCategory.Any())
+    <div class="analytics-grid">
+        <article class="glass card">
+            <h3 class="analytics-title">Category Spend</h3>
+            @if (!CategoryBreakdown.Any())
+            {
+                <p>No expense data in this period.</p>
+            }
+            else
+            {
+                <ApexChart TItem="CategorySlice" Options="donutOptions" Title="Expense Breakdown">
+                    <ApexPointSeries TItem="CategorySlice"
+                                     Items="CategoryBreakdown"
+                                     Name="Amount"
+                                     SeriesType="SeriesType.Donut"
+                                     XValue="e => e.Category"
+                                     YValue="e => e.Total" />
+                </ApexChart>
+            }
+        </article>
+
+        <article class="glass card">
+            <h3 class="analytics-title">Monthly Income vs Expense</h3>
+            @if (!MonthlyTrend.Any())
+            {
+                <p>No trend data available.</p>
+            }
+            else
+            {
+                <ApexChart TItem="MonthTrendItem" Options="barOptions" Title="Monthly Trend">
+                    <ApexPointSeries TItem="MonthTrendItem"
+                                     Items="MonthlyTrend"
+                                     Name="Income"
+                                     SeriesType="SeriesType.Bar"
+                                     XValue="e => e.MonthLabel"
+                                     YValue="e => e.Income" />
+                    <ApexPointSeries TItem="MonthTrendItem"
+                                     Items="MonthlyTrend"
+                                     Name="Expense"
+                                     SeriesType="SeriesType.Bar"
+                                     XValue="e => e.MonthLabel"
+                                     YValue="e => e.Expense" />
+                </ApexChart>
+            }
+        </article>
+    </div>
+
+    <article class="glass card">
+        <h3 class="analytics-title">Top Expense Transactions</h3>
+        @if (!TopExpenses.Any())
         {
-            <div class="table-row"><div class="muted">No expense data this month.</div></div>
+            <p>No expense transactions in this period.</p>
         }
         else
         {
-            @foreach (var item in expenseByCategory)
-            {
-                <div class="table-row">
-                    <div>@item.Key</div>
-                    <div style="text-align:right;" class="amount expense">- @item.Value.ToString("C")</div>
+            <div class="analytics-table">
+                <div class="analytics-table-head">
+                    <span>Date</span>
+                    <span>Description</span>
+                    <span>Category</span>
+                    <span>Amount</span>
                 </div>
-            }
+                @foreach (var tx in TopExpenses)
+                {
+                    <div class="analytics-table-row">
+                        <span>@tx.Date.ToString("dd MMM")</span>
+                        <span>@tx.Description</span>
+                        <span>@tx.Category</span>
+                        <span class="expense">@tx.Amount.ToString("C")</span>
+                    </div>
+                }
+            </div>
         }
-    </div>
-</div>
+    </article>
+</section>
 
 @code {
-    private decimal incomeThisMonth;
-    private decimal expensesThisMonth;
-    private decimal netThisMonth;
-    private Dictionary<string, decimal> expenseByCategory = new(StringComparer.OrdinalIgnoreCase);
+    private const string CategoryChartId = "categorySpendChart";
+    private const string MonthlyChartId = "monthlyTrendChart";
+
+    private int selectedRange = 90;
+    private string selectedDownloadType = "csv";
+    private string downloadStatus = "";
+    private string currentUserId = "";
+    private List<Transaction> allTransactions = new();
+
+    private readonly ApexChartOptions<CategorySlice> donutOptions = new()
+    {
+        Chart = new Chart { Id = CategoryChartId },
+        Theme = new Theme { Mode = Mode.Dark },
+        Legend = new Legend { Position = LegendPosition.Bottom },
+        DataLabels = new DataLabels { Enabled = true }
+    };
+
+    private readonly ApexChartOptions<MonthTrendItem> barOptions = new()
+    {
+        Chart = new Chart { Id = MonthlyChartId },
+        Theme = new Theme { Mode = Mode.Dark },
+        PlotOptions = new PlotOptions
+        {
+            Bar = new PlotOptionsBar
+            {
+                BorderRadius = 4,
+                ColumnWidth = "50%"
+            }
+        },
+        DataLabels = new DataLabels { Enabled = false },
+        Legend = new Legend { Position = LegendPosition.Top }
+    };
 
     protected override async Task OnInitializedAsync()
     {
-        var userId = await AuthService.GetCurrentUserIdAsync();
-        var txs = await TransactionService.GetTransactionsAsync(userId);
-        var now = DateTime.Today;
-        var monthStart = new DateTime(now.Year, now.Month, 1);
-        var nextMonth = monthStart.AddMonths(1);
+        currentUserId = await AuthService.GetCurrentUserIdAsync();
+        allTransactions = await TransactionService.GetTransactionsAsync(currentUserId);
+    }
 
-        var monthly = txs.Where(t => t.Date >= monthStart && t.Date < nextMonth).ToList();
-        incomeThisMonth = monthly
-            .Where(t => string.Equals(t.Type, "income", StringComparison.OrdinalIgnoreCase))
-            .Sum(t => t.Amount);
-        expensesThisMonth = monthly
-            .Where(t => string.Equals(t.Type, "expense", StringComparison.OrdinalIgnoreCase))
-            .Sum(t => t.Amount);
-        netThisMonth = incomeThisMonth - expensesThisMonth;
+    private IEnumerable<Transaction> InRangeTransactions =>
+        allTransactions.Where(t => t.Date >= DateTime.Today.AddDays(-selectedRange));
 
-        expenseByCategory = monthly
-            .Where(t => string.Equals(t.Type, "expense", StringComparison.OrdinalIgnoreCase))
-            .GroupBy(t => string.IsNullOrWhiteSpace(t.Category) ? "Uncategorized" : t.Category)
-            .OrderByDescending(g => g.Sum(x => x.Amount))
-            .ToDictionary(g => g.Key, g => g.Sum(x => x.Amount), StringComparer.OrdinalIgnoreCase);
+    private decimal TotalIncome =>
+        InRangeTransactions
+            .Where(IsIncome)
+            .Sum(t => t.Amount);
+
+    private decimal TotalExpense =>
+        InRangeTransactions
+            .Where(IsExpense)
+            .Sum(t => t.Amount);
+
+    private decimal Net => TotalIncome - TotalExpense;
+
+    private decimal SavingsRate =>
+        TotalIncome <= 0 ? 0 : (Net / TotalIncome) * 100m;
+
+    private List<CategorySlice> CategoryBreakdown
+    {
+        get
+        {
+            var expenses = InRangeTransactions.Where(IsExpense).ToList();
+            if (!expenses.Any()) return new();
+
+            return expenses
+                .GroupBy(x => string.IsNullOrWhiteSpace(x.Category) ? "General" : x.Category)
+                .Select(g => new CategorySlice
+                {
+                    Category = g.Key,
+                    Total = g.Sum(x => x.Amount)
+                })
+                .OrderByDescending(x => x.Total)
+                .ToList();
+        }
+    }
+
+    private List<MonthTrendItem> MonthlyTrend =>
+        InRangeTransactions
+            .GroupBy(x => new { x.Date.Year, x.Date.Month })
+            .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
+            .Select(g => new MonthTrendItem
+            {
+                MonthLabel = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy"),
+                Income = g.Where(IsIncome).Sum(x => x.Amount),
+                Expense = g.Where(IsExpense).Sum(x => x.Amount)
+            })
+            .ToList();
+
+    private List<Transaction> TopExpenses =>
+        InRangeTransactions
+            .Where(IsExpense)
+            .OrderByDescending(x => x.Amount)
+            .Take(5)
+            .ToList();
+
+    private string CsvFileName => $"analytics-report-{DateTime.Now:yyyyMMdd-HHmm}.csv";
+
+    private string CsvContent
+    {
+        get
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("Metric,Value");
+            sb.AppendLine($"Income,{TotalIncome:0.00}");
+            sb.AppendLine($"Expense,{TotalExpense:0.00}");
+            sb.AppendLine($"Net,{Net:0.00}");
+            sb.AppendLine($"SavingsRate,{SavingsRate:0.00}%");
+            sb.AppendLine();
+            sb.AppendLine("Category,Expense");
+            foreach (var c in CategoryBreakdown)
+            {
+                sb.AppendLine($"{EscapeCsv(c.Category)},{c.Total:0.00}");
+            }
+            sb.AppendLine();
+            sb.AppendLine("Date,Description,Category,Type,Amount");
+            foreach (var tx in InRangeTransactions.OrderByDescending(t => t.Date))
+            {
+                sb.AppendLine($"{tx.Date:yyyy-MM-dd},{EscapeCsv(tx.Description)},{EscapeCsv(tx.Category)},{tx.Type},{tx.Amount:0.00}");
+            }
+            return sb.ToString();
+        }
+    }
+
+    private async Task DownloadSelectedAsync()
+    {
+        downloadStatus = string.Empty;
+        try
+        {
+            switch (selectedDownloadType)
+            {
+                case "csv":
+                    await JS.InvokeVoidAsync("financeAnalytics.downloadTextFile", CsvFileName, CsvContent, "text/csv;charset=utf-8");
+                    downloadStatus = "CSV report downloaded.";
+                    break;
+
+                case "donutPng":
+                    await JS.InvokeVoidAsync("financeAnalytics.downloadChartPng", CategoryChartId, $"category-chart-{DateTime.Now:yyyyMMdd-HHmm}.png");
+                    downloadStatus = "Category chart downloaded.";
+                    break;
+
+                case "barPng":
+                    await JS.InvokeVoidAsync("financeAnalytics.downloadChartPng", MonthlyChartId, $"monthly-chart-{DateTime.Now:yyyyMMdd-HHmm}.png");
+                    downloadStatus = "Monthly chart downloaded.";
+                    break;
+
+                case "allChartsPng":
+                    await JS.InvokeVoidAsync("financeAnalytics.downloadChartPng", CategoryChartId, $"category-chart-{DateTime.Now:yyyyMMdd-HHmm}.png");
+                    await JS.InvokeVoidAsync("financeAnalytics.downloadChartPng", MonthlyChartId, $"monthly-chart-{DateTime.Now:yyyyMMdd-HHmm}.png");
+                    downloadStatus = "Both charts downloaded.";
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            downloadStatus = $"Download failed: {ex.Message}";
+        }
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+        var v = value.Replace("\"", "\"\"");
+        return $"\"{v}\"";
+    }
+
+    private static bool IsIncome(Transaction t) =>
+        string.Equals(t.Type, "income", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsExpense(Transaction t) =>
+        string.Equals(t.Type, "expense", StringComparison.OrdinalIgnoreCase);
+
+    private class CategorySlice
+    {
+        public string Category { get; set; } = "General";
+        public decimal Total { get; set; }
+    }
+
+    private class MonthTrendItem
+    {
+        public string MonthLabel { get; set; } = "";
+        public decimal Income { get; set; }
+        public decimal Expense { get; set; }
     }
 }

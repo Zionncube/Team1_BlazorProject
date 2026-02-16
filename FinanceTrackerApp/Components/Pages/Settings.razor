@@ -84,8 +84,7 @@
         if (session != null)
         {
             UserEmail = session.Email;
-            // Sync logic for the name "Happiness"
-            DisplayName = UserEmail == "happiness@demo.com" ? "Happiness" : UserEmail.Split('@')[0];
+            DisplayName = UserEmail.Split('@')[0];
         }
 
         var currencyReq = await Storage.GetAsync<string>("pref_currency");

@@ -9,6 +9,7 @@ public class FinanceDbContext : DbContext
         : base(options) { }
 
     public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<User> Users => Set<User>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<SavingsGoal> SavingsGoals => Set<SavingsGoal>();
     public DbSet<GoalContribution> GoalContributions => Set<GoalContribution>();
@@ -16,6 +17,13 @@ public class FinanceDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<User>()
+            .HasKey(u => u.UserId);
+
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
 
         modelBuilder.Entity<Category>()
             .HasKey(c => c.CategoryId);

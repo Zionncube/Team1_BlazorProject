@@ -307,3 +307,83 @@ This week priority checklist**
 - Add at least one test project (none exists yet).
 - Replace demo auth model (plain password/in-memory) with secure auth path.
 - Final README with setup, architecture, routes, and demo flow.
+Good call — use this exact manual test flow in the running app.
+
+Start App
+
+cd C:\Users\user\Desktop\Team1_BlazorProject\FinanceTrackerApp
+dotnet run
+Open the localhost URL shown in terminal.
+Test 1: Auth + Protected Routes
+
+Try opening /transactions directly when logged out.
+Confirm redirect to /login.
+Register a new user (or login with valid account).
+Confirm you can access dashboard and nav pages after login.
+Logout and confirm protected pages redirect again.
+Test 2: Categories CRUD
+
+Go to /categories.
+Add category: Food, color any.
+Add category: Transport, color any.
+Edit one category name.
+Delete one category.
+Confirm list updates immediately.
+Test 3: Transactions CRUD + Category Link
+
+Go to /transactions.
+Click + Add Transaction.
+Add income transaction.
+Add expense transaction.
+In category dropdown, confirm your categories appear.
+Edit one transaction (amount/description).
+Delete one transaction.
+Confirm table/search/filter still works.
+Test 4: Dashboard Real Data
+
+Go to /.
+Confirm:
+Total Balance updates
+Monthly Income updates
+Monthly Expenses updates
+Transactions count updates
+Confirm “Recent Transactions” shows latest entries.
+Test 5: Goals (Local)
+
+Go to /goals.
+Add goal.
+Add money to goal.
+Edit goal.
+Open contribution history.
+Delete goal.
+Confirm values update correctly.
+Test 6: Analytics
+
+Go to /analytics.
+Confirm monthly income/expenses/net match transactions.
+Confirm expense category breakdown appears.
+Test 7: Settings
+
+Go to /settings.
+Change currency + show goals toggle + budget limit.
+Save settings.
+Refresh page and confirm preferences persist.
+Test logout.
+Test 8: Persistence Check
+
+Stop app (Ctrl + C).
+Run again (dotnet run).
+Login.
+Confirm categories/transactions/goals still exist (SQLite persistence).
+If all pass, app is ready for demo.
+
+
+
+
+
+
+
+
+
+
+

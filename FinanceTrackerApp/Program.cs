@@ -25,8 +25,19 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuthenticationStateProvider, FirebaseAuthStateProvider>();
 builder.Services.AddApexCharts();
 
+var dbFolder = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+    "FinanceTrackerApp");
+Directory.CreateDirectory(dbFolder);
+var dbPath = Path.Combine(dbFolder, "FinanceTracker.db");
+var legacyDbPath = Path.Combine(builder.Environment.ContentRootPath, "FinanceTracker.db");
+if (!File.Exists(dbPath) && File.Exists(legacyDbPath))
+{
+    File.Copy(legacyDbPath, dbPath);
+}
+
 builder.Services.AddDbContext<FinanceDbContext>(options =>
-    options.UseSqlite("Data Source=FinanceTracker.db"));
+    options.UseSqlite($"Data Source={dbPath}"));
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<CategoryService>();
 
@@ -39,6 +50,17 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FinanceDbContext>();
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS Users (
+            UserId TEXT NOT NULL CONSTRAINT PK_Users PRIMARY KEY,
+            Email TEXT NOT NULL,
+            PasswordHash TEXT NOT NULL,
+            CreatedAt TEXT NOT NULL
+        );
+        """);
+    db.Database.ExecuteSqlRaw("""
+        CREATE UNIQUE INDEX IF NOT EXISTS IX_Users_Email ON Users (Email);
+        """);
     db.Database.ExecuteSqlRaw("""
         CREATE TABLE IF NOT EXISTS Categories (
             CategoryId TEXT NOT NULL CONSTRAINT PK_Categories PRIMARY KEY,

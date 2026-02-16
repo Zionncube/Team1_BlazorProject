@@ -16,12 +16,12 @@
 
         <div class="field">
             <label>Email</label>
-            <input class="input" @bind="email" placeholder="demo@finance.com" />
+            <input class="input" @bind="email" placeholder="you@example.com" />
         </div>
 
         <div class="field">
             <label>Password</label>
-            <input class="input" type="password" @bind="password" placeholder="1234" />
+            <input class="input" type="password" @bind="password" placeholder="Enter your password" />
         </div>
 
         <button class="btn btn-primary w-100" @onclick="HandleLogin">
@@ -29,12 +29,8 @@
         </button>
 
         <p class="switch">
-            Don’t have an account?
+            Don't have an account?
             <a href="/register">Sign up</a>
-        </p>
-
-        <p class="hint">
-            Demo login: <strong>demo@finance.com</strong> / <strong>1234</strong>
         </p>
     </div>
 </section>
@@ -52,7 +48,7 @@
 
         if (!ok)
         {
-            error = "Invalid email or password.";
+            error = Auth.LastError ?? "Invalid email or password.";
             return;
         }
 
@@ -75,3 +71,5 @@
         return "/";
     }
 }
+
+
