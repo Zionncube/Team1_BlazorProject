@@ -1,4 +1,5 @@
 @page "/edit-transaction/{TransactionId:guid}"
+@attribute [Authorize]
 @using FinanceTrackerApp.Models
 @using FinanceTrackerApp.Services
 @inject TransactionService TransactionService
@@ -71,7 +72,7 @@
 
                 <div style="margin-top:1rem; margin: auto;">
                     <button type="submit" class="btn btn-primary">Save</button>
-                    <button class="btn btn-ghost" @onclick="Cancel">Cancel</button>
+                    <button type="button" class="btn btn-ghost" @onclick="Cancel">Cancel</button>
                 </div>
             </div>
         </EditForm>

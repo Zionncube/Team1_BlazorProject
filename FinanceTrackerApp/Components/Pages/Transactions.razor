@@ -9,6 +9,7 @@
 
 @inject TransactionService TransactionService
 @inject AuthService AuthService
+@inject NavigationManager NavigationManager
 
 <div class="glass card">
 
@@ -18,7 +19,7 @@
             <p style="margin:.25rem 0 0 0;">Manage your income and expenses.</p>
         </div>
 
-        <button class="btn btn-primary" @onclick="OpenAddModal">
+        <button class="btn btn-primary" @onclick="OpenAddPage">
             + Add Transaction
         </button>
     </div>
@@ -77,7 +78,7 @@
                         @sign @tx.Amount.ToString("C")
                     </div>
                     <div class="row-actions">
-                        <button class="btn btn-xs" @onclick="() => OpenEditModal(tx)">Edit</button>
+                        <button class="btn btn-xs" @onclick="() => OpenEditPage(tx.TransactionId)">Edit</button>
                         <button class="btn btn-xs btn-danger" @onclick="() => DeleteTransaction(tx)">Delete</button>
                     </div>
                 </div>
@@ -180,6 +181,16 @@
         isEditMode = false;
         ResetNewTransaction();
         isModalOpen = true;
+    }
+
+    private void OpenAddPage()
+    {
+        NavigationManager.NavigateTo("/add-transaction");
+    }
+
+    private void OpenEditPage(Guid transactionId)
+    {
+        NavigationManager.NavigateTo($"/edit-transaction/{transactionId}");
     }
 
     private void OpenEditModal(Transaction tx)

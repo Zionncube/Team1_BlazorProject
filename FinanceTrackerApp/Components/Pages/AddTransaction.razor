@@ -1,7 +1,9 @@
 @page "/add-transaction"
+@attribute [Authorize]
 @using FinanceTrackerApp.Models
 @using FinanceTrackerApp.Services
 @inject TransactionService TransactionService
+@inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
 <EditForm Model="@newTx" OnValidSubmit="SaveTransaction">
@@ -63,7 +65,7 @@
 
             <div style="margin-top:1rem; margin: auto;">
                 <button type="submit" class="btn btn-primary">Save</button>
-                <button class="btn btn-ghost" @onclick="Cancel">Cancel</button>
+                <button type="button" class="btn btn-ghost" @onclick="Cancel">Cancel</button>
             </div>
         </div>
     </div>
@@ -75,12 +77,17 @@
         Date = DateTime.Today,
         Type = "expense"
     };
+    private string _currentUserId = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUserId = await AuthService.GetCurrentUserIdAsync();
+    }
 
     private async Task SaveTransaction()
     {
-        Console.WriteLine("Adding transaction...");
+        newTx.UserId = _currentUserId;
         await TransactionService.AddAsync(newTx);
-        Console.WriteLine("Navigating back to /transactions");
         NavigationManager.NavigateTo("/transactions");
     }
 
