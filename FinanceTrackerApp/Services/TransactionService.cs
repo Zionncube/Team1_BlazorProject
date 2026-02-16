@@ -27,10 +27,27 @@ namespace FinanceTrackerApp.Services
             await _db.SaveChangesAsync();
         }
 
+        // Compatibility wrappers used by branch pages (AddTransaction/EditTransaction)
+        public async Task AddAsync(Transaction transaction)
+        {
+            await AddTransactionAsync(transaction);
+        }
+
         public async Task UpdateTransactionAsync(Transaction transaction)
         {
             _db.Transactions.Update(transaction);
             await _db.SaveChangesAsync();
+        }
+
+        // Compatibility wrappers used by branch pages (AddTransaction/EditTransaction)
+        public async Task UpdateAsync(Transaction transaction)
+        {
+            await UpdateTransactionAsync(transaction);
+        }
+
+        public async Task<Transaction?> GetByIdAsync(Guid transactionId)
+        {
+            return await _db.Transactions.FindAsync(transactionId);
         }
 
         public async Task DeleteTransactionAsync(Guid transactionId)
