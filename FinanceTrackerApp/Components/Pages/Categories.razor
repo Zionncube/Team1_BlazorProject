@@ -1,7 +1,139 @@
 @page "/categories"
 @attribute [Authorize]
+@using FinanceTrackerApp.Models
+@using FinanceTrackerApp.Services
+@inject CategoryService CategoryService
+@inject AuthService AuthService
 
 <div class="glass card">
-    <h2>Categories</h2>
-    <p>Manage categories like Food, Transport, Rent, Savings, etc.</p>
+    <div class="page-head">
+        <div>
+            <h2 style="margin:0;">Categories</h2>
+            <p style="margin:.25rem 0 0 0;">Create and manage your transaction categories.</p>
+        </div>
+        <button class="btn btn-primary" @onclick="OpenAdd">+ Add Category</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="alert">@error</div>
+    }
+
+    <div class="table glass">
+        <div class="table-row table-head">
+            <div>Name</div>
+            <div>Color</div>
+            <div></div>
+        </div>
+
+        @if (!categories.Any())
+        {
+            <div class="table-row"><div class="muted">No categories yet.</div></div>
+        }
+        else
+        {
+            @foreach (var category in categories)
+            {
+                <div class="table-row">
+                    <div class="strong">@category.Name</div>
+                    <div>
+                        <span class="pill" style="background:@category.Color;color:#111">@category.Color</span>
+                    </div>
+                    <div class="row-actions">
+                        <button class="btn btn-xs" @onclick="() => OpenEdit(category)">Edit</button>
+                        <button class="btn btn-xs btn-danger" @onclick="() => Delete(category.CategoryId)">Delete</button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
 </div>
+
+<Modal @bind-IsOpen="isModalOpen" Title="@(isEditMode ? "Edit Category" : "Add Category")">
+    <ChildContent>
+        <div class="form-grid">
+            <div class="field">
+                <label>Name</label>
+                <input class="input" @bind="form.Name" />
+            </div>
+            <div class="field">
+                <label>Color</label>
+                <input class="input" type="color" @bind="form.Color" />
+            </div>
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn btn-ghost" @onclick="CloseModal">Cancel</button>
+        <button class="btn btn-primary" @onclick="Save">Save</button>
+    </FooterContent>
+</Modal>
+
+@code {
+    private bool isModalOpen;
+    private bool isEditMode;
+    private string userId = "";
+    private string error = "";
+    private List<Category> categories = new();
+    private Category form = new() { Color = "#2BEF83" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await AuthService.GetCurrentUserIdAsync();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        categories = await CategoryService.GetByUserAsync(userId);
+    }
+
+    private void OpenAdd()
+    {
+        isEditMode = false;
+        form = new Category { Color = "#2BEF83" };
+        error = "";
+        isModalOpen = true;
+    }
+
+    private void OpenEdit(Category category)
+    {
+        isEditMode = true;
+        form = new Category
+        {
+            CategoryId = category.CategoryId,
+            Name = category.Name,
+            Color = category.Color,
+            UserId = category.UserId
+        };
+        error = "";
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(form.Name))
+        {
+            error = "Category name is required.";
+            return;
+        }
+
+        if (isEditMode)
+            await CategoryService.UpdateAsync(form, userId);
+        else
+            await CategoryService.AddAsync(form, userId);
+
+        await LoadData();
+        isModalOpen = false;
+    }
+
+    private async Task Delete(Guid categoryId)
+    {
+        await CategoryService.DeleteAsync(categoryId, userId);
+        await LoadData();
+    }
+}

@@ -1,0 +1,78 @@
+@page "/analytics"
+@attribute [Authorize]
+@using FinanceTrackerApp.Models
+@using FinanceTrackerApp.Services
+@inject TransactionService TransactionService
+@inject AuthService AuthService
+
+<div class="glass card">
+    <h2>Analytics</h2>
+    <p class="muted">Monthly totals and category breakdown from your local transaction data.</p>
+
+    <div class="kpis" style="margin-top: .8rem;">
+        <div class="glass kpi">
+            <div class="label">This Month Income</div>
+            <div class="value income">@incomeThisMonth.ToString("C")</div>
+        </div>
+        <div class="glass kpi">
+            <div class="label">This Month Expenses</div>
+            <div class="value negative">@expensesThisMonth.ToString("C")</div>
+        </div>
+        <div class="glass kpi">
+            <div class="label">Net</div>
+            <div class="value @(netThisMonth >= 0 ? "positive" : "negative")">@netThisMonth.ToString("C")</div>
+        </div>
+    </div>
+
+    <div class="table glass" style="margin-top: 1rem;">
+        <div class="table-row table-head">
+            <div>Category</div>
+            <div style="text-align:right;">Expenses</div>
+        </div>
+        @if (!expenseByCategory.Any())
+        {
+            <div class="table-row"><div class="muted">No expense data this month.</div></div>
+        }
+        else
+        {
+            @foreach (var item in expenseByCategory)
+            {
+                <div class="table-row">
+                    <div>@item.Key</div>
+                    <div style="text-align:right;" class="amount expense">- @item.Value.ToString("C")</div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private decimal incomeThisMonth;
+    private decimal expensesThisMonth;
+    private decimal netThisMonth;
+    private Dictionary<string, decimal> expenseByCategory = new(StringComparer.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = await AuthService.GetCurrentUserIdAsync();
+        var txs = await TransactionService.GetTransactionsAsync(userId);
+        var now = DateTime.Today;
+        var monthStart = new DateTime(now.Year, now.Month, 1);
+        var nextMonth = monthStart.AddMonths(1);
+
+        var monthly = txs.Where(t => t.Date >= monthStart && t.Date < nextMonth).ToList();
+        incomeThisMonth = monthly
+            .Where(t => string.Equals(t.Type, "income", StringComparison.OrdinalIgnoreCase))
+            .Sum(t => t.Amount);
+        expensesThisMonth = monthly
+            .Where(t => string.Equals(t.Type, "expense", StringComparison.OrdinalIgnoreCase))
+            .Sum(t => t.Amount);
+        netThisMonth = incomeThisMonth - expensesThisMonth;
+
+        expenseByCategory = monthly
+            .Where(t => string.Equals(t.Type, "expense", StringComparison.OrdinalIgnoreCase))
+            .GroupBy(t => string.IsNullOrWhiteSpace(t.Category) ? "Uncategorized" : t.Category)
+            .OrderByDescending(g => g.Sum(x => x.Amount))
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Amount), StringComparer.OrdinalIgnoreCase);
+    }
+}

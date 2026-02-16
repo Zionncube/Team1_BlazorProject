@@ -17,7 +17,7 @@
         <div class="glass card">
             <h2>Account</h2>
             <div class="profile-chip" style="margin-top: 1rem; border: none; background: rgba(255,255,255,0.03);">
-                <div class="avatar">@UserEmail?.Substring(0, 1).ToUpper()</div>
+                <div class="avatar">@GetAvatar()</div>
                 <div>
                     <div class="profile-name">@UserEmail</div>
                     <div class="profile-sub">Member since @JoinDate</div>
@@ -38,8 +38,8 @@
                 <label>Primary Currency</label>
                 <select class="input" @bind="SelectedCurrency">
                     <option value="USD">USD ($)</option>
-                    <option value="NGN">NGN (₦)</option>
-                    <option value="EUR">EUR (€)</option>
+                    <option value="NGN">NGN (Naira)</option>
+                    <option value="EUR">EUR (Euro)</option>
                 </select>
             </div>
 
@@ -123,5 +123,11 @@
     {
         await Storage.DeleteAsync("firebase_auth_session");
         Nav.NavigateTo("/login", forceLoad: true);
+    }
+
+    private string GetAvatar()
+    {
+        if (string.IsNullOrWhiteSpace(UserEmail)) return "U";
+        return UserEmail.Substring(0, 1).ToUpperInvariant();
     }
 }

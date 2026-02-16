@@ -6,7 +6,7 @@
     <!-- Sidebar -->
     <aside class="sidebar glass @(sidebarOpen ? "open" : "")">
         <div class="sidebar-brand">
-            <div class="brand-badge">₣</div>
+            <div class="brand-badge">FT</div>
             <div class="brand-text">
                 <div class="brand-title">Finance Tracker</div>
                 <div class="brand-sub">Smart money habits</div>
@@ -55,6 +55,16 @@
                 Categories
             </NavLink>
 
+            <NavLink class="nav-link" href="/analytics">
+                <span class="nav-icon">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 19V5M10 19v-8M16 19V9M22 19v-4" stroke="currentColor" stroke-width="1.8"
+                              stroke-linecap="round" />
+                    </svg>
+                </span>
+                Analytics
+            </NavLink>
+
             <NavLink class="nav-link" href="/settings">
                 <span class="nav-icon">
                     <svg class="icon" viewBox="0 0 24 24" fill="none">
@@ -92,7 +102,7 @@
                 </button>
 
                 <div>
-                    <div class="header-title">Welcome back 👋</div>
+                    <div class="header-title">Welcome back</div>
                     <div class="header-sub">Track your money like a pro.</div>
                 </div>
             </div>
@@ -139,3 +149,4 @@
         }
     }
 }
+

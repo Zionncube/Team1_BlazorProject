@@ -3,6 +3,7 @@ namespace FinanceTrackerApp.Models;
 public class SavingsGoal
 {
     public Guid GoalId { get; set; } = Guid.NewGuid();
+    public string UserId { get; set; } = "demo-user";
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal TargetAmount { get; set; }

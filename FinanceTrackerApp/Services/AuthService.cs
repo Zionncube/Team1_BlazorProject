@@ -60,7 +60,7 @@ namespace FinanceTrackerApp.Services
 
         public async Task<bool> LoginAsync(string email, string password)
         {
-            if (IsDemoCredentials(email, password))
+            if (_options.AllowDemoLogin && IsDemoCredentials(email, password))
             {
                 await SaveSessionAsync(CreateDemoSession());
                 NotifySessionChanged();

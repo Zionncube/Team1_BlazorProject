@@ -28,22 +28,50 @@ builder.Services.AddApexCharts();
 builder.Services.AddDbContext<FinanceDbContext>(options =>
     options.UseSqlite("Data Source=FinanceTracker.db"));
 builder.Services.AddScoped<TransactionService>();
+builder.Services.AddScoped<CategoryService>();
 
 builder.Services.Configure<FirebaseOptions>(builder.Configuration.GetSection("Firebase"));
 builder.Services.AddHttpClient("firebase");
-builder.Services.AddSingleton<IGoalsStore>(sp =>
-{
-    var options = sp.GetRequiredService<IOptions<FirebaseOptions>>().Value;
-    if (string.IsNullOrWhiteSpace(options.DatabaseUrl))
-    {
-        return new InMemoryGoalsStore();
-    }
-
-    var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("firebase");
-    return new FirebaseGoalsStore(http, options);
-});
+builder.Services.AddScoped<IGoalsStore, LocalGoalsStore>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<FinanceDbContext>();
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS Categories (
+            CategoryId TEXT NOT NULL CONSTRAINT PK_Categories PRIMARY KEY,
+            UserId TEXT NOT NULL,
+            Name TEXT NOT NULL,
+            Color TEXT NOT NULL
+        );
+        """);
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS SavingsGoals (
+            GoalId TEXT NOT NULL CONSTRAINT PK_SavingsGoals PRIMARY KEY,
+            UserId TEXT NOT NULL,
+            Title TEXT NOT NULL,
+            Description TEXT NULL,
+            TargetAmount TEXT NOT NULL,
+            CurrentAmount TEXT NOT NULL,
+            TargetDate TEXT NULL,
+            IsCompleted INTEGER NOT NULL,
+            Color TEXT NOT NULL,
+            CreatedAt TEXT NOT NULL
+        );
+        """);
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS GoalContributions (
+            ContributionId TEXT NOT NULL CONSTRAINT PK_GoalContributions PRIMARY KEY,
+            GoalId TEXT NOT NULL,
+            UserId TEXT NOT NULL,
+            Amount TEXT NOT NULL,
+            Date TEXT NOT NULL,
+            Note TEXT NULL
+        );
+        """);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

@@ -10,4 +10,5 @@ public class FirebaseOptions
     public string AppId { get; set; } = "";
     public string DatabaseUrl { get; set; } = "";
     public string AuthToken { get; set; } = "";
+    public bool AllowDemoLogin { get; set; } = false;
 }
