@@ -1,6 +1,6 @@
 # Finance Tracker App
 
-A Blazor Server finance tracker for personal money management with a **local-first** architecture.
+A Blazor Server finance tracker for personal money management with a local-first architecture.
 
 ## 1) Project Overview
 
@@ -57,12 +57,12 @@ Finance Tracker App helps users:
 - .NET SDK 10
 
 ### Run locally
-```bash
+bash
 cd FinanceTrackerApp
 dotnet restore
 dotnet build
 dotnet run
-```
+
 
 The app starts on the URL shown in terminal (usually `https://localhost:xxxx`).
 
@@ -70,7 +70,7 @@ The app starts on the URL shown in terminal (usually `https://localhost:xxxx`).
 
 In `FinanceTrackerApp/appsettings.json` and `FinanceTrackerApp/appsettings.Development.json`:
 
-```json
+json
 "Firebase": {
   "ApiKey": "...",
   "AuthDomain": "...",
@@ -82,7 +82,7 @@ In `FinanceTrackerApp/appsettings.json` and `FinanceTrackerApp/appsettings.Devel
   "AuthToken": "",
   "AllowDemoLogin": false
 }
-```
+
 
 Notes:
 - `AllowDemoLogin` should stay `false` for submission/production.
@@ -91,9 +91,9 @@ Notes:
 ## 8) Testing
 
 ### Run tests
-```bash
+bash
 dotnet test .\FinanceTrackerApp.Tests\FinanceTrackerApp.Tests.csproj
-```
+
 
 Current automated coverage includes:
 - `TransactionService` dashboard summary calculations
