@@ -2,11 +2,18 @@ using FinanceTrackerApp.Models;
 
 namespace FinanceTrackerApp.Services;
 
+/// <summary>
+/// In-memory fallback implementation for goal storage.
+/// Useful for local demos without persistence dependencies.
+/// </summary>
 public class InMemoryGoalsStore : IGoalsStore
 {
     private readonly List<SavingsGoal> _goals = new();
     private readonly List<GoalContribution> _contributions = new();
 
+    /// <summary>
+    /// Seeds demo data for quick local testing.
+    /// </summary>
     public InMemoryGoalsStore()
     {
         var goal1 = new SavingsGoal
@@ -54,16 +61,19 @@ public class InMemoryGoalsStore : IGoalsStore
         });
     }
 
+    /// <summary>Returns all seeded goals.</summary>
     public Task<List<SavingsGoal>> GetGoalsAsync(string userId, CancellationToken ct = default)
     {
         return Task.FromResult(_goals.ToList());
     }
 
+    /// <summary>Returns all seeded contributions.</summary>
     public Task<List<GoalContribution>> GetContributionsAsync(string userId, CancellationToken ct = default)
     {
         return Task.FromResult(_contributions.ToList());
     }
 
+    /// <summary>Adds a goal or updates an existing one.</summary>
     public Task SaveGoalAsync(string userId, SavingsGoal goal, CancellationToken ct = default)
     {
         var existing = _goals.FirstOrDefault(g => g.GoalId == goal.GoalId);
@@ -84,18 +94,21 @@ public class InMemoryGoalsStore : IGoalsStore
         return Task.CompletedTask;
     }
 
+    /// <summary>Deletes a goal by id.</summary>
     public Task DeleteGoalAsync(string userId, Guid goalId, CancellationToken ct = default)
     {
         _goals.RemoveAll(g => g.GoalId == goalId);
         return Task.CompletedTask;
     }
 
+    /// <summary>Adds one contribution in memory.</summary>
     public Task AddContributionAsync(string userId, GoalContribution contribution, CancellationToken ct = default)
     {
         _contributions.Add(contribution);
         return Task.CompletedTask;
     }
 
+    /// <summary>Deletes contributions linked to the goal.</summary>
     public Task DeleteContributionsForGoalAsync(string userId, Guid goalId, CancellationToken ct = default)
     {
         _contributions.RemoveAll(c => c.GoalId == goalId);

@@ -4,15 +4,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceTrackerApp.Services;
 
+/// <summary>
+/// SQLite-backed implementation for savings goals and contributions.
+/// </summary>
 public class LocalGoalsStore : IGoalsStore
 {
     private readonly FinanceDbContext _db;
 
+    /// <summary>
+    /// Creates the local goal store with EF Core context.
+    /// </summary>
     public LocalGoalsStore(FinanceDbContext db)
     {
         _db = db;
     }
 
+    /// <summary>
+    /// Returns goals for one user, newest first.
+    /// </summary>
     public async Task<List<SavingsGoal>> GetGoalsAsync(string userId, CancellationToken ct = default)
     {
         return await _db.SavingsGoals
@@ -21,6 +30,9 @@ public class LocalGoalsStore : IGoalsStore
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Returns contributions for one user, newest first.
+    /// </summary>
     public async Task<List<GoalContribution>> GetContributionsAsync(string userId, CancellationToken ct = default)
     {
         return await _db.GoalContributions
@@ -29,6 +41,9 @@ public class LocalGoalsStore : IGoalsStore
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Creates or updates a goal for the given user.
+    /// </summary>
     public async Task SaveGoalAsync(string userId, SavingsGoal goal, CancellationToken ct = default)
     {
         goal.UserId = userId;
@@ -57,6 +72,9 @@ public class LocalGoalsStore : IGoalsStore
         await _db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Deletes one goal for the given user.
+    /// </summary>
     public async Task DeleteGoalAsync(string userId, Guid goalId, CancellationToken ct = default)
     {
         var goal = await _db.SavingsGoals
@@ -66,6 +84,9 @@ public class LocalGoalsStore : IGoalsStore
         await _db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Adds one contribution for the given user.
+    /// </summary>
     public async Task AddContributionAsync(string userId, GoalContribution contribution, CancellationToken ct = default)
     {
         if (contribution.ContributionId == Guid.Empty)
@@ -76,6 +97,9 @@ public class LocalGoalsStore : IGoalsStore
         await _db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Deletes all contributions linked to one goal.
+    /// </summary>
     public async Task DeleteContributionsForGoalAsync(string userId, Guid goalId, CancellationToken ct = default)
     {
         var items = await _db.GoalContributions

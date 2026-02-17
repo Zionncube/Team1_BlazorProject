@@ -3,16 +3,25 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FinanceTrackerApp.Services
 {
+    /// <summary>
+    /// Converts local auth session state into ASP.NET authentication state.
+    /// </summary>
     public class FirebaseAuthStateProvider : AuthenticationStateProvider
     {
         private readonly AuthService _authService;
 
+        /// <summary>
+        /// Creates the provider and subscribes to auth session change events.
+        /// </summary>
         public FirebaseAuthStateProvider(AuthService authService)
         {
             _authService = authService;
             _authService.SessionChanged += HandleSessionChanged;
         }
 
+        /// <summary>
+        /// Builds the current ClaimsPrincipal from stored session information.
+        /// </summary>
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             FirebaseAuthSession? session;
@@ -40,6 +49,9 @@ namespace FinanceTrackerApp.Services
             return new AuthenticationState(new ClaimsPrincipal(identity));
         }
 
+        /// <summary>
+        /// Pushes auth state refresh to Blazor when session changes.
+        /// </summary>
         private void HandleSessionChanged()
         {
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());

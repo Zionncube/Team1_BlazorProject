@@ -4,17 +4,26 @@ using FinanceTrackerApp.Models;
 
 namespace FinanceTrackerApp.Services;
 
+/// <summary>
+/// Firebase Realtime Database implementation for goal storage.
+/// </summary>
 public class FirebaseGoalsStore : IGoalsStore
 {
     private readonly HttpClient _http;
     private readonly FirebaseOptions _options;
 
+    /// <summary>
+    /// Creates the Firebase-backed goal store.
+    /// </summary>
     public FirebaseGoalsStore(HttpClient http, FirebaseOptions options)
     {
         _http = http;
         _options = options;
     }
 
+    /// <summary>
+    /// Loads all goals for a user from Firebase.
+    /// </summary>
     public async Task<List<SavingsGoal>> GetGoalsAsync(string userId, CancellationToken ct = default)
     {
         var url = BuildUrl($"goals/{userId}");
@@ -34,6 +43,9 @@ public class FirebaseGoalsStore : IGoalsStore
         return map.Values.ToList();
     }
 
+    /// <summary>
+    /// Loads all goal contributions for a user from Firebase.
+    /// </summary>
     public async Task<List<GoalContribution>> GetContributionsAsync(string userId, CancellationToken ct = default)
     {
         var url = BuildUrl($"contributions/{userId}");
@@ -53,6 +65,9 @@ public class FirebaseGoalsStore : IGoalsStore
         return map.Values.ToList();
     }
 
+    /// <summary>
+    /// Creates or updates a goal in Firebase.
+    /// </summary>
     public async Task SaveGoalAsync(string userId, SavingsGoal goal, CancellationToken ct = default)
     {
         if (goal.GoalId == Guid.Empty)
@@ -62,12 +77,18 @@ public class FirebaseGoalsStore : IGoalsStore
         await _http.PutAsJsonAsync(url, goal, ct);
     }
 
+    /// <summary>
+    /// Deletes one goal from Firebase.
+    /// </summary>
     public async Task DeleteGoalAsync(string userId, Guid goalId, CancellationToken ct = default)
     {
         var url = BuildUrl($"goals/{userId}/{goalId}");
         await _http.DeleteAsync(url, ct);
     }
 
+    /// <summary>
+    /// Creates or updates one contribution in Firebase.
+    /// </summary>
     public async Task AddContributionAsync(string userId, GoalContribution contribution, CancellationToken ct = default)
     {
         if (contribution.ContributionId == Guid.Empty)
@@ -77,6 +98,9 @@ public class FirebaseGoalsStore : IGoalsStore
         await _http.PutAsJsonAsync(url, contribution, ct);
     }
 
+    /// <summary>
+    /// Deletes all contributions linked to a goal.
+    /// </summary>
     public async Task DeleteContributionsForGoalAsync(string userId, Guid goalId, CancellationToken ct = default)
     {
         var contributions = await GetContributionsAsync(userId, ct);
@@ -88,6 +112,9 @@ public class FirebaseGoalsStore : IGoalsStore
         }
     }
 
+    /// <summary>
+    /// Builds a Firebase REST URL and appends auth token when configured.
+    /// </summary>
     private string BuildUrl(string path)
     {
         var baseUrl = _options.DatabaseUrl.TrimEnd('/');
