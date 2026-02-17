@@ -13,6 +13,14 @@
 @inject NavigationManager NavigationManager
 
 <div class="glass card">
+    @if (!string.IsNullOrWhiteSpace(pageError))
+    {
+        <div class="alert">@pageError</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(pageSuccess))
+    {
+        <div class="alert" style="background:#e8fff1;color:#0d6b35;border-color:#b8f2d0;">@pageSuccess</div>
+    }
 
     <div class="page-head">
         <div>
@@ -160,6 +168,8 @@
 
     private string currentUserId = "";
     private string formError = "";
+    private string pageError = "";
+    private string pageSuccess = "";
     private string searchTerm = "";
     private string selectedType = "";
     private string selectedCategory = "";
@@ -214,6 +224,8 @@
 
     private async Task SaveTransaction()
     {
+        pageError = "";
+        pageSuccess = "";
         formError = "";
 
         if (newTx.Amount <= 0 || string.IsNullOrWhiteSpace(newTx.Description))
@@ -225,25 +237,44 @@
         // tie transaction to current user
         newTx.UserId = currentUserId;
 
-        if (isEditMode)
+        try
         {
-            newTx.TransactionId = editingTransactionId;
-            await TransactionService.UpdateTransactionAsync(newTx);
-        }
-        else
-        {
-            newTx.TransactionId = Guid.NewGuid();
-            await TransactionService.AddTransactionAsync(newTx);
-        }
+            if (isEditMode)
+            {
+                newTx.TransactionId = editingTransactionId;
+                await TransactionService.UpdateTransactionAsync(newTx);
+                pageSuccess = "Transaction updated.";
+            }
+            else
+            {
+                newTx.TransactionId = Guid.NewGuid();
+                await TransactionService.AddTransactionAsync(newTx);
+                pageSuccess = "Transaction added.";
+            }
 
-        transactions = await TransactionService.GetTransactionsAsync(currentUserId);
-        CloseModal();
+            transactions = await TransactionService.GetTransactionsAsync(currentUserId);
+            CloseModal();
+        }
+        catch
+        {
+            pageError = "Could not save transaction right now. Please try again.";
+        }
     }
 
     private async Task DeleteTransaction(Transaction tx)
     {
-        await TransactionService.DeleteTransactionAsync(tx.TransactionId);
-        transactions.Remove(tx);
+        pageError = "";
+        pageSuccess = "";
+        try
+        {
+            await TransactionService.DeleteTransactionAsync(tx.TransactionId);
+            transactions.Remove(tx);
+            pageSuccess = "Transaction deleted.";
+        }
+        catch
+        {
+            pageError = "Could not delete transaction right now. Please try again.";
+        }
     }
 
     private void CloseModal()

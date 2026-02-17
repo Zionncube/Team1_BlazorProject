@@ -18,6 +18,10 @@
     {
         <div class="alert">@error</div>
     }
+    @if (!string.IsNullOrWhiteSpace(success))
+    {
+        <div class="alert" style="background:#e8fff1;color:#0d6b35;border-color:#b8f2d0;">@success</div>
+    }
 
     <div class="table glass">
         <div class="table-row table-head">
@@ -73,6 +77,7 @@
     private bool isEditMode;
     private string userId = "";
     private string error = "";
+    private string success = "";
     private List<Category> categories = new();
     private Category form = new() { Color = "#2BEF83" };
 
@@ -116,24 +121,46 @@
 
     private async Task Save()
     {
+        success = "";
         if (string.IsNullOrWhiteSpace(form.Name))
         {
             error = "Category name is required.";
             return;
         }
+        try
+        {
+            if (isEditMode)
+            {
+                await CategoryService.UpdateAsync(form, userId);
+                success = "Category updated.";
+            }
+            else
+            {
+                await CategoryService.AddAsync(form, userId);
+                success = "Category added.";
+            }
 
-        if (isEditMode)
-            await CategoryService.UpdateAsync(form, userId);
-        else
-            await CategoryService.AddAsync(form, userId);
-
-        await LoadData();
-        isModalOpen = false;
+            await LoadData();
+            isModalOpen = false;
+        }
+        catch
+        {
+            error = "Could not save category right now. Please try again.";
+        }
     }
 
     private async Task Delete(Guid categoryId)
     {
-        await CategoryService.DeleteAsync(categoryId, userId);
-        await LoadData();
+        success = "";
+        try
+        {
+            await CategoryService.DeleteAsync(categoryId, userId);
+            await LoadData();
+            success = "Category deleted.";
+        }
+        catch
+        {
+            error = "Could not delete category right now. Please try again.";
+        }
     }
 }

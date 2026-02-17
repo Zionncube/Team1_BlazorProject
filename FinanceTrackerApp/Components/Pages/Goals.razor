@@ -12,6 +12,15 @@
 <PageTitle>Goals</PageTitle>
 
 <section class="page">
+    @if (!string.IsNullOrWhiteSpace(pageError))
+    {
+        <div class="alert">@pageError</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(pageSuccess))
+    {
+        <div class="alert" style="background:#e8fff1;color:#0d6b35;border-color:#b8f2d0;">@pageSuccess</div>
+    }
+
     <header class="page-header">
         <div>
             <h1 class="title">Savings Goals</h1>
@@ -364,6 +373,8 @@
     private string historySubtitle = "";
     private List<GoalContribution> historyItems = new();
     private string goalCreateError = "";
+    private string pageError = "";
+    private string pageSuccess = "";
 
     private string currentUserId = "demo-user";
 
@@ -462,6 +473,8 @@
 
     private async Task AddMoney()
     {
+        pageError = "";
+        pageSuccess = "";
         if (selectedGoalId == Guid.Empty || contributionAmount <= 0)
             return;
 
@@ -485,17 +498,35 @@
             Note = contributionNote
         };
 
-        await GoalsStore.SaveGoalAsync(currentUserId, goal);
-        await GoalsStore.AddContributionAsync(currentUserId, contribution);
-        contributions.Add(contribution);
-
-        isAddMoneyOpen = false;
+        try
+        {
+            await GoalsStore.SaveGoalAsync(currentUserId, goal);
+            await GoalsStore.AddContributionAsync(currentUserId, contribution);
+            contributions.Add(contribution);
+            pageSuccess = "Contribution added.";
+            isAddMoneyOpen = false;
+        }
+        catch
+        {
+            pageError = "Could not add contribution right now. Please try again.";
+        }
     }
 
-    private void ToggleComplete(SavingsGoal goal)
+    private async Task ToggleComplete(SavingsGoal goal)
     {
+        pageError = "";
+        pageSuccess = "";
         goal.IsCompleted = !goal.IsCompleted;
-        _ = GoalsStore.SaveGoalAsync(currentUserId, goal);
+        try
+        {
+            await GoalsStore.SaveGoalAsync(currentUserId, goal);
+            pageSuccess = goal.IsCompleted ? "Goal marked complete." : "Goal marked open.";
+        }
+        catch
+        {
+            goal.IsCompleted = !goal.IsCompleted;
+            pageError = "Could not update goal status right now.";
+        }
     }
 
     private void OpenEditGoal(SavingsGoal goal)
@@ -521,6 +552,8 @@
 
     private async Task SaveEditedGoal()
     {
+        pageError = "";
+        pageSuccess = "";
         var goal = goals.FirstOrDefault(g => g.GoalId == editGoalId);
         if (goal is null) return;
 
@@ -545,8 +578,16 @@
         if (goal.CurrentAmount >= goal.TargetAmount)
             goal.IsCompleted = true;
 
-        await GoalsStore.SaveGoalAsync(currentUserId, goal);
-        isEditGoalOpen = false;
+        try
+        {
+            await GoalsStore.SaveGoalAsync(currentUserId, goal);
+            pageSuccess = "Goal updated.";
+            isEditGoalOpen = false;
+        }
+        catch
+        {
+            pageError = "Could not update goal right now. Please try again.";
+        }
     }
 
     private void OpenDeleteConfirm(SavingsGoal goal)
@@ -560,14 +601,23 @@
 
     private async Task ConfirmDeleteGoal()
     {
+        pageError = "";
+        pageSuccess = "";
         if (deleteGoalId == Guid.Empty) return;
+        try
+        {
+            await GoalsStore.DeleteContributionsForGoalAsync(currentUserId, deleteGoalId);
+            await GoalsStore.DeleteGoalAsync(currentUserId, deleteGoalId);
 
-        await GoalsStore.DeleteContributionsForGoalAsync(currentUserId, deleteGoalId);
-        await GoalsStore.DeleteGoalAsync(currentUserId, deleteGoalId);
-
-        goals.RemoveAll(g => g.GoalId == deleteGoalId);
-        contributions.RemoveAll(c => c.GoalId == deleteGoalId);
-        isDeleteConfirmOpen = false;
+            goals.RemoveAll(g => g.GoalId == deleteGoalId);
+            contributions.RemoveAll(c => c.GoalId == deleteGoalId);
+            pageSuccess = "Goal deleted.";
+            isDeleteConfirmOpen = false;
+        }
+        catch
+        {
+            pageError = "Could not delete goal right now. Please try again.";
+        }
     }
 
     private void OpenHistory(SavingsGoal goal)

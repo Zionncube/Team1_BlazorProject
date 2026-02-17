@@ -8,6 +8,10 @@
 @inject NavigationManager NavigationManager
 
 <div class="glass card" style="padding:1rem; max-width:500px; margin:auto;">
+    @if (!string.IsNullOrWhiteSpace(formError))
+    {
+        <div class="alert">@formError</div>
+    }
     <h2 class="strong" style="color: var(--text);">Edit Transaction</h2>
     <p style=" margin-bottom: 15px">Need to make a change? Edit your transaction below.</p>
 
@@ -98,6 +102,7 @@
     private string newCategoryName = "";
     private string newCategoryColor = "#2BEF83";
     private string categoryMessage = "";
+    private string formError = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -113,9 +118,16 @@
     private async Task SaveTransaction()
     {
         if (editTx == null) return;
-
-        await TransactionService.UpdateAsync(editTx);
-        NavigationManager.NavigateTo("/transactions");
+        formError = "";
+        try
+        {
+            await TransactionService.UpdateAsync(editTx);
+            NavigationManager.NavigateTo("/transactions");
+        }
+        catch
+        {
+            formError = "Could not update transaction right now. Please try again.";
+        }
     }
 
     private void Cancel()

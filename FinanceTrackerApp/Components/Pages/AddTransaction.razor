@@ -11,6 +11,10 @@
     <DataAnnotationsValidator />
     <ValidationSummary class="validation-summary" />
     <div class="glass card" style="padding:1rem; max-width:500px; margin:auto;">
+        @if (!string.IsNullOrWhiteSpace(formError))
+        {
+            <div class="alert">@formError</div>
+        }
         <h2 class="strong" style="color: var(--text);">Add Transaction</h2>
         <p style=" margin-bottom: 15px">Add a new transaction to keep track of.</p>
 
@@ -94,6 +98,7 @@
     private string newCategoryName = "";
     private string newCategoryColor = "#2BEF83";
     private string categoryMessage = "";
+    private string formError = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -107,9 +112,17 @@
 
     private async Task SaveTransaction()
     {
-        newTx.UserId = _currentUserId;
-        await TransactionService.AddAsync(newTx);
-        NavigationManager.NavigateTo("/transactions");
+        formError = "";
+        try
+        {
+            newTx.UserId = _currentUserId;
+            await TransactionService.AddAsync(newTx);
+            NavigationManager.NavigateTo("/transactions");
+        }
+        catch
+        {
+            formError = "Could not save transaction right now. Please try again.";
+        }
     }
 
     private async Task LoadCategoriesAsync()

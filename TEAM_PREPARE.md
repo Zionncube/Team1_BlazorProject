@@ -387,3 +387,120 @@ If all pass, app is ready for demo.
 
 
 
+
+
+1. Malcolm Nigel Nkomo — Auth (start first, 2–3 min)
+Script:
+
+“Hi, we are Team Finance Tracker. I’m Malcolm, and I’ll show authentication and route protection.”
+“This project helps users track transactions, savings goals, categories, and analytics in a Blazor Server app.”
+“I’ll start with invalid login to show error handling.”
+“Now I register a new account and log in successfully.”
+“After login, protected pages are accessible. On logout, session is cleared and protected access is blocked.”
+Demo steps:
+
+Open /login
+Fail login once (show error)
+Open /register, create account
+Login
+Open protected page
+Logout from /logout
+Code to reference:
+
+Login.razor
+Register.razor
+Logout.razor
+AuthService.cs
+2. Figuelia Ya’Sin — Home + Categories + UX (2–3 min)
+Script:
+
+“I’m Figuelia, covering dashboard design and categories.”
+“The dashboard summarizes live financial data with clear navigation and consistent layout.”
+“On Categories, users can add, edit, and delete custom categories with colors.”
+“If anything fails, the app now shows clear error feedback instead of silently failing.”
+Demo steps:
+
+Open /
+Open /categories
+Add category
+Edit category
+Delete category
+Show success/error messages
+Code to reference:
+
+Home.razor
+Categories.razor
+CategoryService.cs
+3. Jacob Matthew Preciado — Transactions (2–3 min)
+Script:
+
+“I’m Jacob, covering transaction management.”
+“Users can create, edit, delete, and filter transactions by search, type, and category.”
+“Transactions are persisted in SQLite and tied to the authenticated user.”
+“We improved error handling so failed operations return clear messages.”
+Demo steps:
+
+Open /transactions
+Add transaction from /add-transaction
+Edit from /edit-transaction/{id}
+Delete transaction
+Use filters and category dropdown
+Show category colors on pills
+Code to reference:
+
+Transactions.razor
+AddTransaction.razor
+EditTransaction.razor
+TransactionService.cs
+4. Great Okie Bebia — Settings + Architecture + Documentation (2–3 min)
+Script:
+
+“I’m Great, covering architecture, settings, and documentation.”
+“This is a local-first Blazor app using EF Core + SQLite with service-layer separation.”
+“Settings provide user personalization and consistent UX behavior.”
+“We maintain documentation and tests to support maintainability and grading requirements.”
+Demo steps:
+
+Open /settings
+Show preference changes
+Show project structure in IDE
+Show README
+Show test run in terminal
+Code to reference:
+
+Settings.razor
+Program.cs
+FinanceDbContext.cs
+README.md
+FinanceTrackerApp.Tests/
+5. Happiness Ncube — Goals + Analytics + Final Wrap (2–3 min)
+Script:
+
+“I’m Happiness, and I’ll conclude with goals and analytics.”
+“Goals support creating targets, adding contributions, status changes, and progress tracking.”
+“Analytics provides chart-based insights and export options.”
+“The project meets functional, UX, error-handling, documentation, and presentation requirements.”
+Demo steps:
+
+Open /goals
+Add goal
+Add contribution
+Edit goal
+Delete goal
+Open /analytics
+Show charts + CSV/PNG export
+Code to reference:
+
+Goals.razor
+Analytics.razor
+LocalGoalsStore.cs
+analytics-export.js
+Rubric Alignment Lines 
+
+“Implementation: core features are complete and integrated end-to-end.”
+“Design/UX: consistent navigation, visual hierarchy, and usability.”
+“Error Handling: user-facing validation and robust failure feedback across CRUD flows.”
+“Documentation: README and structured codebase with tested services.”
+“Presentation: each member demonstrates owned module in a coherent flow.”
+If you want, next I can also produce:
+
