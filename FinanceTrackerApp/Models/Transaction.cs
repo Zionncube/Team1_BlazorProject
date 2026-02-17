@@ -16,7 +16,7 @@ public class Transaction
     public string Category { get; set; } = "General";
     public DateTime Date { get; set; } = DateTime.Today;
 
-    [Required(ErrorMessage = "Description is required!")]
+    [Required(ErrorMessage = "Please enter a description")]
     public string Description { get; set; } = "";
 
     [Required(ErrorMessage = "Type is required!")]
