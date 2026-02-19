@@ -25,16 +25,13 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuthenticationStateProvider, FirebaseAuthStateProvider>();
 builder.Services.AddApexCharts();
 
-var dbFolder = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-    "FinanceTrackerApp");
-Directory.CreateDirectory(dbFolder);
-var dbPath = Path.Combine(dbFolder, "FinanceTracker.db");
-var legacyDbPath = Path.Combine(builder.Environment.ContentRootPath, "FinanceTracker.db");
-if (!File.Exists(dbPath) && File.Exists(legacyDbPath))
+var dbFolder = "./Data";
+if (!Directory.Exists(dbFolder))
 {
-    File.Copy(legacyDbPath, dbPath);
+    Directory.CreateDirectory(dbFolder);
 }
+var dbPath = Path.Combine(dbFolder, "FinanceTrackerApp.db");
+
 
 builder.Services.AddDbContext<FinanceDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
