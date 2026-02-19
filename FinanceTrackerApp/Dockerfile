@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 as base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
@@ -8,7 +8,7 @@ WORKDIR /src
 RUN dotnet build "FinanceTrackerApp.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "FinanceTrackerApp.csproj" -c Release -n /app/publish
+RUN dotnet publish "FinanceTrackerApp.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
