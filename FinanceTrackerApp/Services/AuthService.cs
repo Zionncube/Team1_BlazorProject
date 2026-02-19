@@ -32,6 +32,8 @@ namespace FinanceTrackerApp.Services
             _options = options.Value;
         }
 
+        #region Register / Login / Logout
+
         public async Task<bool> RegisterAsync(AppUser user)
         {
             LastError = null;
@@ -72,6 +74,7 @@ namespace FinanceTrackerApp.Services
                 Email = newUser.Email,
                 ExpiresAtUtc = DateTimeOffset.UtcNow.AddDays(30)
             };
+
             await SaveSessionAsync(session);
             NotifySessionChanged();
             return true;
@@ -80,6 +83,7 @@ namespace FinanceTrackerApp.Services
         public async Task<bool> LoginAsync(string email, string password)
         {
             LastError = null;
+
             if (_options.AllowDemoLogin && IsDemoCredentials(email, password))
             {
                 await SaveSessionAsync(CreateDemoSession());
@@ -109,6 +113,7 @@ namespace FinanceTrackerApp.Services
                 Email = user.Email,
                 ExpiresAtUtc = DateTimeOffset.UtcNow.AddDays(30)
             };
+
             await SaveSessionAsync(session);
             NotifySessionChanged();
             return true;
@@ -128,16 +133,15 @@ namespace FinanceTrackerApp.Services
             NotifySessionChanged();
         }
 
-        public async Task<string> GetCurrentUserIdAsync()
-        {
-            var session = await GetSessionAsync();
-            return session?.LocalId ?? "";
-        }
+        #endregion
+
+        #region Session Management
 
         public async Task<FirebaseAuthSession?> GetSessionAsync()
         {
+            // Use cached session if still valid (margin: 5 minutes)
             if (_cachedSession != null &&
-                _cachedSession.ExpiresAtUtc > DateTimeOffset.UtcNow.AddMinutes(1))
+                _cachedSession.ExpiresAtUtc > DateTimeOffset.UtcNow.AddMinutes(5))
             {
                 return _cachedSession;
             }
@@ -147,11 +151,13 @@ namespace FinanceTrackerApp.Services
             {
                 stored = await _storage.GetAsync<FirebaseAuthSession>(SessionKey);
             }
-            catch
+            catch (Exception ex)
             {
-                // If browser storage is unavailable, stay anonymous instead of failing the circuit.
+                // If browser storage is unavailable, stay anonymous
+                Console.WriteLine($"ProtectedLocalStorage failed: {ex.Message}");
                 return null;
             }
+
             if (!stored.Success || stored.Value is null)
             {
                 _cachedSession = null;
@@ -159,6 +165,8 @@ namespace FinanceTrackerApp.Services
             }
 
             var session = stored.Value;
+
+            // Expired session
             if (session.ExpiresAtUtc <= DateTimeOffset.UtcNow.AddMinutes(1))
             {
                 await LogoutAsync();
@@ -167,6 +175,12 @@ namespace FinanceTrackerApp.Services
 
             _cachedSession = session;
             return session;
+        }
+
+        public async Task<string> GetCurrentUserIdAsync()
+        {
+            var session = await GetSessionAsync();
+            return session?.LocalId ?? "";
         }
 
         private async Task SaveSessionAsync(FirebaseAuthSession session)
@@ -183,6 +197,10 @@ namespace FinanceTrackerApp.Services
         }
 
         private void NotifySessionChanged() => SessionChanged?.Invoke();
+
+        #endregion
+
+        #region Helpers
 
         private static bool IsDemoCredentials(string email, string password)
         {
@@ -201,7 +219,7 @@ namespace FinanceTrackerApp.Services
             var hash = Rfc2898DeriveBytes.Pbkdf2(
                 password,
                 salt,
-                100000,
+                100_000,
                 HashAlgorithmName.SHA256,
                 32);
             return $"{Convert.ToBase64String(salt)}:{Convert.ToBase64String(hash)}";
@@ -216,7 +234,7 @@ namespace FinanceTrackerApp.Services
             var actual = Rfc2898DeriveBytes.Pbkdf2(
                 password,
                 salt,
-                100000,
+                100_000,
                 HashAlgorithmName.SHA256,
                 32);
             return CryptographicOperations.FixedTimeEquals(actual, expected);
@@ -233,6 +251,8 @@ namespace FinanceTrackerApp.Services
                 ExpiresAtUtc = DateTimeOffset.UtcNow.AddDays(30)
             };
         }
+
+        #endregion
     }
 
     public class FirebaseAuthSession
@@ -243,5 +263,4 @@ namespace FinanceTrackerApp.Services
         public string Email { get; set; } = "";
         public DateTimeOffset ExpiresAtUtc { get; set; } = DateTimeOffset.UtcNow;
     }
-
 }
