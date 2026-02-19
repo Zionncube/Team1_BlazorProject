@@ -7,6 +7,8 @@ using Microsoft.Extensions.Options;
 using FinanceTrackerApp.Data;
 using FinanceTrackerApp.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
