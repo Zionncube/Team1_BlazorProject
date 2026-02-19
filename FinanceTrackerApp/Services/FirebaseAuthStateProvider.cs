@@ -5,67 +5,6 @@ using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 namespace FinanceTrackerApp.Services
 {
     /// <summary>
-    /// Represents a Firebase authentication session.
-    /// </summary>
-    public class FirebaseAuthSession
-    {
-        public string LocalId { get; set; } = string.Empty;
-        public string? Email { get; set; }
-        public string IdToken { get; set; } = string.Empty;
-        public string? RefreshToken { get; set; }
-        public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddHours(1);
-    }
-
-    /// <summary>
-    /// Service to manage Firebase authentication session state.
-    /// </summary>
-    public class AuthService
-    {
-        private readonly ProtectedLocalStorage _localStorage;
-        private FirebaseAuthSession? _session;
-
-        public event Action? SessionChanged;
-
-        public AuthService(ProtectedLocalStorage localStorage)
-        {
-            _localStorage = localStorage;
-        }
-
-        /// <summary>
-        /// Sets and persists the current session.
-        /// </summary>
-        public async Task SetSessionAsync(FirebaseAuthSession session)
-        {
-            _session = session;
-            await _localStorage.SetAsync("firebaseSession", session);
-            SessionChanged?.Invoke();
-        }
-
-        /// <summary>
-        /// Clears the current session.
-        /// </summary>
-        public async Task ClearSessionAsync()
-        {
-            _session = null;
-            await _localStorage.DeleteAsync("firebaseSession");
-            SessionChanged?.Invoke();
-        }
-
-        /// <summary>
-        /// Retrieves the current session, restoring from storage if needed.
-        /// </summary>
-        public async Task<FirebaseAuthSession?> GetSessionAsync()
-        {
-            if (_session != null)
-                return _session;
-
-            var stored = await _localStorage.GetAsync<FirebaseAuthSession>("firebaseSession");
-            _session = stored.Value;
-            return _session;
-        }
-    }
-
-    /// <summary>
     /// Converts the local Firebase session into an ASP.NET authentication state.
     /// </summary>
     public class FirebaseAuthStateProvider : AuthenticationStateProvider
