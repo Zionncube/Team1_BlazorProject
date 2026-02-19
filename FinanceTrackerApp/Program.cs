@@ -53,49 +53,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FinanceDbContext>();
-    db.Database.ExecuteSqlRaw("""
-        CREATE TABLE IF NOT EXISTS Users (
-            UserId TEXT NOT NULL CONSTRAINT PK_Users PRIMARY KEY,
-            Email TEXT NOT NULL,
-            PasswordHash TEXT NOT NULL,
-            CreatedAt TEXT NOT NULL
-        );
-        """);
-    db.Database.ExecuteSqlRaw("""
-        CREATE UNIQUE INDEX IF NOT EXISTS IX_Users_Email ON Users (Email);
-        """);
-    db.Database.ExecuteSqlRaw("""
-        CREATE TABLE IF NOT EXISTS Categories (
-            CategoryId TEXT NOT NULL CONSTRAINT PK_Categories PRIMARY KEY,
-            UserId TEXT NOT NULL,
-            Name TEXT NOT NULL,
-            Color TEXT NOT NULL
-        );
-        """);
-    db.Database.ExecuteSqlRaw("""
-        CREATE TABLE IF NOT EXISTS SavingsGoals (
-            GoalId TEXT NOT NULL CONSTRAINT PK_SavingsGoals PRIMARY KEY,
-            UserId TEXT NOT NULL,
-            Title TEXT NOT NULL,
-            Description TEXT NULL,
-            TargetAmount TEXT NOT NULL,
-            CurrentAmount TEXT NOT NULL,
-            TargetDate TEXT NULL,
-            IsCompleted INTEGER NOT NULL,
-            Color TEXT NOT NULL,
-            CreatedAt TEXT NOT NULL
-        );
-        """);
-    db.Database.ExecuteSqlRaw("""
-        CREATE TABLE IF NOT EXISTS GoalContributions (
-            ContributionId TEXT NOT NULL CONSTRAINT PK_GoalContributions PRIMARY KEY,
-            GoalId TEXT NOT NULL,
-            UserId TEXT NOT NULL,
-            Amount TEXT NOT NULL,
-            Date TEXT NOT NULL,
-            Note TEXT NULL
-        );
-        """);
+    db.Database.Migrate(); 
 }
 
 // Configure the HTTP request pipeline.
