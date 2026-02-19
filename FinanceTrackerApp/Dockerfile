@@ -3,7 +3,8 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 COPY . /src
-RUN ls
+RUN ls /src
+WORKDIR /src
 RUN dotnet build "FinanceTrackerApp.csproj" -c Release -o /app/build
 
 FROM build AS publish
