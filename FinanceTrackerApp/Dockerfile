@@ -1,6 +1,8 @@
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 
+RUN mkdir -p /app/dataprotection-keys
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 COPY . /src
 RUN ls /src

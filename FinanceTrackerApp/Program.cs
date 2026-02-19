@@ -11,6 +11,10 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/app/dataprotection-keys"))
+    .SetApplicationName("FinanceTrackerApp");
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
